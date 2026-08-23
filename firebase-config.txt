@@ -1,12 +1,13 @@
+Content is user-generated and unverified.
+Learn about artifacts
 // ============================================================
-// إعدادات Firebase — عبّي هذا الملف بمفاتيحك من Firebase Console
-// (شوف ملف التعليمات.md للخطوات بالتفصيل، خطوة رقم 2)
+// إعدادات Firebase — مشروع alameerat0
 // ============================================================
 const firebaseConfig = {
-  apiKey:"AIzaSyColmKfAGtHL7nNYQdzI0zIRBMXwTNRrK0",
+  apiKey: "AIzaSyColmKfAGtHL7nNYQdzI0zIRBMXwTNRrK0",
   authDomain: "alameerat0.firebaseapp.com",
   projectId: "alameerat0",
-  storageBucket:  "alameerat0.firebasestorage.app",
+  storageBucket: "alameerat0.firebasestorage.app",
   messagingSenderId: "629600456632",
-  appId: 1:629600456632:web:368d3e44e818fd3c87894d",
+  appId: "1:629600456632:web:368d3e44e818fd3c87894d"
 };
