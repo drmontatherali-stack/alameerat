@@ -1,8 +1,4 @@
-Content is user-generated and unverified.
-Learn about artifacts
-// ============================================================
-// إعدادات Firebase — مشروع alameerat0
-// ============================================================
+
 const firebaseConfig = {
   apiKey: "AIzaSyColmKfAGtHL7nNYQdzI0zIRBMXwTNRrK0",
   authDomain: "alameerat0.firebaseapp.com",
