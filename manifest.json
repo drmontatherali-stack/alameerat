@@ -1,8 +1,15 @@
-
-  apiKey: "AIzaSyColmKfAGtHL7nNYQdzI0zIRBMXwTNRrK0",
-  authDomain: "alameerat0.firebaseapp.com",
-  projectId: "alameerat0",
-  storageBucket: "alameerat0.firebasestorage.app",
-  messagingSenderId: "629600456632",
-  appId: "1:629600456632:web:368d3e44e818fd3c87894d"
-};
+{
+  "name": "سلف المقاولين — مجمع الأميرات",
+  "short_name": "سلف المقاولين",
+  "description": "متابعة سلف المقاولين، الدور، الكادر، والمبالغ",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#EDF1F5",
+  "theme_color": "#16233B",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
