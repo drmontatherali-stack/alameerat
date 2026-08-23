@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سلف المقاولين — مجمع الأميرات</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#16233B">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800&family=Tajawal:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<!-- Firebase (تخزين + مزامنة + عمل بدون نت) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<style>
+  :root{
+    --navy:#16233B;
+    --navy-soft:#2A3B5C;
+    --paper:#EDF1F5;
+    --paper-line:#D7E0EA;
+    --amber:#D98E04;
+    --amber-soft:#F5D68A;
+    --rust:#B7472A;
+    --ink:#1C2431;
+    --muted:#5C7186;
+    --card:#FFFFFF;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Tajawal',sans-serif;
+    background:
+      linear-gradient(var(--paper-line) 1px, transparent 1px) 0 0/100% 28px,
+      linear-gradient(90deg, var(--paper-line) 1px, transparent 1px) 0 0/28px 100%,
+      var(--paper);
+    color:var(--ink);
+    min-height:100vh;
+    padding-bottom:96px;
+  }
+  header{
+    background:var(--navy);
+    color:#fff;
+    padding:22px 18px 20px;
+    border-radius:0 0 22px 22px;
+    box-shadow:0 6px 18px rgba(22,35,59,.18);
+    position:relative;
+    overflow:hidden;
+  }
+  header::after{
+    content:"";
+    position:absolute; inset:0;
+    background-image:repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, transparent 1px 24px);
+    pointer-events:none;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:2px;
+    color:var(--amber-soft);
+    text-transform:uppercase;
+  }
+  h1{
+    font-family:'Cairo',sans-serif;
+    font-size:22px;
+    font-weight:800;
+    margin:4px 0 2px;
+  }
+  .sub{font-size:13px;color:#B9C3D6;margin:0;}
+
+  .conn-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.14);
+    padding:4px 9px;
+    border-radius:20px;
+    margin-top:10px;
+    color:#B9C3D6;
+  }
+  .conn-dot{width:7px;height:7px;border-radius:50%;background:#8FBF8F;}
+  .conn-badge.offline .conn-dot{background:#D98E04;}
+  .conn-badge.offline{color:var(--amber-soft);}
+
+  .stats-row{
+    display:flex;
+    gap:10px;
+    margin-top:16px;
+    overflow-x:auto;
+    padding-bottom:2px;
+  }
+  .stat-chip{
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.14);
+    border-radius:10px;
+    padding:8px 12px;
+    min-width:98px;
+    flex:0 0 auto;
+  }
+  .stat-chip .n{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:15px;
+    font-weight:600;
+    color:#fff;
+  }
+  .stat-chip .l{font-size:10px;color:#AEB9CC;margin-top:2px;}
+
+  main{padding:16px;}
+
+  .filters{
+    display:flex;
+    gap:8px;
+    margin-bottom:14px;
+    overflow-x:auto;
+  }
+  select, input[type=text]{
+    font-family:'Tajawal',sans-serif;
+    font-size:13px;
+    border:1px solid var(--paper-line);
+    background:var(--card);
+    color:var(--ink);
+    border-radius:10px;
+    padding:9px 12px;
+    outline:none;
+  }
+  select:focus, input:focus{border-color:var(--amber);}
+
+  .view-toggle{
+    display:flex;
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .tab-btn{
+    flex:1;
+    padding:9px;
+    border-radius:10px;
+    border:1px solid var(--paper-line);
+    background:var(--card);
+    color:var(--muted);
+    font-family:'Tajawal',sans-serif;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .tab-btn.active{
+    background:var(--navy);
+    border-color:var(--navy);
+    color:#fff;
+  }
+
+  .empty{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--muted);
+  }
+  .empty .icon{font-size:36px;margin-bottom:10px;}
+  .empty b{font-family:'Cairo',sans-serif;color:var(--navy);display:block;margin-bottom:6px;font-size:16px;}
+
+  .contractor-card{
+    background:var(--card);
+    border-radius:var(--radius);
+    margin-bottom:14px;
+    box-shadow:0 2px 10px rgba(22,35,59,.06);
+    border:1px solid #E4E9EF;
+    overflow:hidden;
+  }
+  .contractor-head{
+    padding:14px 16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    cursor:pointer;
+  }
+  .contractor-name{
+    font-family:'Cairo',sans-serif;
+    font-weight:700;
+    font-size:16px;
+    color:var(--navy);
+  }
+  .contractor-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+  .chevron{transition:transform .2s; color:var(--muted); font-size:14px;}
+  .contractor-card.open .chevron{transform:rotate(180deg);}
+
+  .ruler{
+    height:10px;
+    margin:0 16px 10px;
+    border-radius:6px;
+    background:#EEE3C8;
+    position:relative;
+    overflow:hidden;
+    background-image:repeating-linear-gradient(90deg, rgba(22,35,59,.08) 0 1px, transparent 1px 8px);
+  }
+  .ruler-fill{
+    position:absolute; top:0; right:0; bottom:0;
+    background:linear-gradient(90deg, var(--amber), #E8B23A);
+    border-radius:6px;
+  }
+  .ruler-row{display:flex; justify-content:space-between; padding:0 16px 12px; font-size:11px; font-family:'IBM Plex Mono',monospace; color:var(--muted);}
+
+  .entries{
+    max-height:0;
+    overflow:hidden;
+    transition:max-height .25s ease;
+    border-top:1px dashed var(--paper-line);
+  }
+  .contractor-card.open .entries{max-height:2000px;}
+
+  .entry{
+    padding:12px 16px;
+    border-bottom:1px solid #F0F3F7;
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    align-items:flex-start;
+  }
+  .entry:last-child{border-bottom:none;}
+  .entry-left{flex:1;min-width:0;}
+  .code-tag{
+    display:inline-block;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    font-weight:600;
+    background:#F1F4F8;
+    border:1px solid #DCE3EB;
+    color:var(--navy-soft);
+    padding:2px 7px;
+    border-radius:6px;
+    margin-left:6px;
+  }
+  .work-item{font-size:13.5px;margin-top:6px;color:var(--ink);}
+  .entry-tags{margin-top:6px;font-size:11px;color:var(--muted);}
+  .entry-amounts{
+    text-align:left;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    white-space:nowrap;
+  }
+  .amt-total{color:var(--navy);font-weight:600;}
+  .amt-remain{color:var(--rust);margin-top:3px;}
+  .amt-paid{color:#3E8F6B;margin-top:3px;}
+  .entry-actions{display:flex;gap:6px;margin-top:8px;}
+  .icon-btn{
+    border:none;background:none;color:var(--muted);
+    font-size:12px;cursor:pointer;padding:2px 4px;
+  }
+  .icon-btn:hover{color:var(--rust);}
+
+  .fab{
+    position:fixed;
+    left:18px; bottom:22px;
+    background:var(--amber);
+    color:var(--navy);
+    border:none;
+    width:56px;height:56px;
+    border-radius:50%;
+    font-size:26px;
+    font-weight:700;
+    box-shadow:0 8px 20px rgba(217,142,4,.4);
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(22,35,59,.45);
+    display:none;
+    align-items:flex-end;
+    z-index:50;
+  }
+  .overlay.show{display:flex;}
+  .sheet{
+    background:var(--paper);
+    width:100%;
+    border-radius:20px 20px 0 0;
+    padding:18px 18px 22px;
+    max-height:88vh;
+    overflow-y:auto;
+    animation:slideUp .22s ease;
+  }
+  @keyframes slideUp{from{transform:translateY(24px);opacity:0;} to{transform:translateY(0);opacity:1;}}
+  .sheet h2{
+    font-family:'Cairo',sans-serif;
+    font-size:17px;
+    color:var(--navy);
+    margin:0 0 14px;
+  }
+  .field{margin-bottom:12px;}
+  .field label{
+    display:block;
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:5px;
+  }
+  .field input, .field select{
+    width:100%;
+    padding:10px 12px;
+    font-size:14px;
+  }
+  .row2{display:flex;gap:10px;}
+  .row2 .field{flex:1;}
+  .sheet-actions{display:flex;gap:10px;margin-top:16px;}
+  .btn{
+    flex:1;
+    padding:12px;
+    border-radius:10px;
+    border:none;
+    font-family:'Tajawal',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+  }
+  .btn-primary{background:var(--navy);color:#fff;}
+  .btn-secondary{background:#E4E9EF;color:var(--ink);}
+  .btn-danger{background:var(--rust);color:#fff;}
+
+  .toast{
+    position:fixed; top:16px; left:50%; transform:translateX(-50%);
+    background:var(--navy); color:#fff;
+    padding:10px 18px; border-radius:20px;
+    font-size:13px; z-index:99;
+    opacity:0; transition:opacity .25s;
+    pointer-events:none;
+  }
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">مجمع الأميرات · إدارة</div>
+  <h1>سلف المقاولين</h1>
+  <p class="sub">متابعة الدور، الكادر، والمبالغ الواصلة والمتبقية</p>
+  <div class="conn-badge" id="connBadge"><span class="conn-dot"></span><span id="connText">متصل — يزامن تلقائيًا</span></div>
+  <div class="stats-row" id="statsRow"></div>
+</header>
+
+<main>
+  <div class="filters">
+    <select id="monthFilter"><option value="">كل الأشهر</option></select>
+    <select id="contractorFilter"><option value="">كل المقاولين</option></select>
+    <select id="crewFilter"><option value="">كل الكوادر</option></select>
+  </div>
+  <div class="view-toggle">
+    <button class="tab-btn active" id="tabByContractor">حسب المقاول</button>
+    <button class="tab-btn" id="tabByCrew">حسب الكادر</button>
+  </div>
+  <div id="list"></div>
+</main>
+
+<button class="fab" id="fabAdd" aria-label="إضافة حركة">+</button>
+
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <h2 id="sheetTitle">إضافة حركة جديدة</h2>
+    <div class="row2">
+      <div class="field">
+        <label>الشهر</label>
+        <input type="text" id="f_month" placeholder="مثال: الشهر 8">
+      </div>
+      <div class="field">
+        <label>المقاول</label>
+        <select id="f_contractor"></select>
+        <input type="text" id="f_contractor_other" placeholder="اكتب اسم المقاول" style="display:none;margin-top:6px;">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>رمز الدور</label>
+        <input type="text" id="f_code" placeholder="A20.H4">
+      </div>
+      <div class="field">
+        <label>الكادر (الاسم / نوع الشغل)</label>
+        <select id="f_crew"></select>
+        <input type="text" id="f_crew_other_name" placeholder="اسم الكادر" style="display:none;margin-top:6px;">
+        <input type="text" id="f_crew_other_type" placeholder="نوع الشغل" style="display:none;margin-top:6px;">
+      </div>
+    </div>
+    <div class="field">
+      <label>فقرة العمل</label>
+      <input type="text" id="f_item" placeholder="مثال: تصليح كذا، معالجة كذا">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>المبلغ الكلي</label>
+        <input type="text" inputmode="numeric" id="f_total" placeholder="0">
+      </div>
+      <div class="field">
+        <label>المبلغ الواصل</label>
+        <input type="text" inputmode="numeric" id="f_paid" placeholder="0">
+      </div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" id="cancelBtn">إلغاء</button>
+      <button class="btn btn-primary" id="saveBtn">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== القوائم الثابتة =====
+const CONTRACTORS = [
+  "عادل عرار",
+  "محمد عرار",
+  "جاسم زراق ق 4",
+  "جاسم زراك ق 5",
+  "ق 1+2",
+  "احمد عواد",
+  "اسعد هادي"
+];
+
+const CREWS = [
+  {name:"محمد صادق حاكم", type:"ابواب خشب"},
+  {name:"سهيل سلمان عبد", type:"سقوف + محجر"},
+  {name:"عبد الامير مهدي", type:"كهرباء"},
+  {name:"لقمان شاه محمدي", type:"ابواب خشب"},
+  {name:"اياد حسن عبد", type:"حدادة"},
+  {name:"حسن زيدان عبد", type:"ماء ومجاري"},
+  {name:"علي حمود نعمه", type:"ابواب خشب"},
+  {name:"برهم جلال جوهر", type:"زجاج"},
+  {name:"نايف", type:"صبغ"},
+  {name:"خديدا قاسم فارس", type:"سقوف"}
+];
+
+let entries = [];
+let editingId = null;
+let viewMode = 'contractor'; // 'contractor' | 'crew'
+
+const $ = (id) => document.getElementById(id);
+
+function fillSelect(sel, options, valueFn, labelFn, includeOther){
+  sel.innerHTML = options.map(o=>`<option value="${valueFn(o)}">${labelFn(o)}</option>`).join('')
+    + (includeOther ? '<option value="__other__">أخرى (اكتب يدويًا)</option>' : '');
+}
+
+function initFormLists(){
+  fillSelect($('f_contractor'), CONTRACTORS, c=>c, c=>c, true);
+  fillSelect($('f_crew'), CREWS, c=>`${c.name}|${c.type}`, c=>`${c.name} - ${c.type}`, true);
+}
+
+$('f_contractor').addEventListener('change', ()=>{
+  const isOther = $('f_contractor').value === '__other__';
+  $('f_contractor_other').style.display = isOther ? 'block' : 'none';
+});
+$('f_crew').addEventListener('change', ()=>{
+  const isOther = $('f_crew').value === '__other__';
+  $('f_crew_other_name').style.display = isOther ? 'block' : 'none';
+  $('f_crew_other_type').style.display = isOther ? 'block' : 'none';
+});
+
+function fmt(n){
+  n = Number(n)||0;
+  return n.toLocaleString('en-US');
+}
+function showToast(msg){
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1600);
+}
+
+// ===== Firebase / Firestore =====
+let db = null;
+let entriesRef = null;
+
+function initFirebase(){
+  if(typeof firebaseConfig === 'undefined' || !firebaseConfig || !firebaseConfig.apiKey || firebaseConfig.apiKey.includes('ضع_')){
+    $('connBadge').classList.add('offline');
+    $('connText').textContent = 'ما تم إعداد Firebase بعد — شوف firebase-config.js';
+    showToast('لازم تعبي بيانات Firebase أول بملف firebase-config.js');
+    return false;
+  }
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+  // تفعيل التخزين المحلي = يشتغل بدون نت ويزامن أول ما يرجع الاتصال
+  db.enablePersistence({synchronizeTabs:true}).catch(err=>{
+    console.warn('Persistence error:', err.code);
+  });
+  entriesRef = db.collection('contractor_entries');
+  return true;
+}
+
+function watchConnection(){
+  window.addEventListener('online', ()=>{
+    $('connBadge').classList.remove('offline');
+    $('connText').textContent = 'متصل — يزامن تلقائيًا';
+  });
+  window.addEventListener('offline', ()=>{
+    $('connBadge').classList.add('offline');
+    $('connText').textContent = 'بدون نت — التغييرات محفوظة وراح تزامن لاحقًا';
+  });
+  if(!navigator.onLine){
+    $('connBadge').classList.add('offline');
+    $('connText').textContent = 'بدون نت — التغييرات محفوظة وراح تزامن لاحقًا';
+  }
+}
+
+function listenEntries(){
+  if(!entriesRef) return;
+  entriesRef.orderBy('createdAt', 'desc').onSnapshot(snapshot=>{
+    entries = snapshot.docs.map(d=>({id:d.id, ...d.data()}));
+    render();
+  }, err=>{
+    console.error(err);
+    showToast('صار خطأ بالمزامنة، تحقق من إعداد Firebase');
+  });
+}
+
+async function addEntry(data){
+  await entriesRef.add(data);
+}
+async function updateEntry(id, data){
+  await entriesRef.doc(id).update(data);
+}
+async function removeEntry(id){
+  await entriesRef.doc(id).delete();
+}
+
+function openSheet(entry){
+  editingId = entry ? entry.id : null;
+  $('sheetTitle').textContent = entry ? 'تعديل الحركة' : 'إضافة حركة جديدة';
+  $('f_month').value = entry ? entry.month : '';
+  $('f_code').value = entry ? entry.code : '';
+  $('f_item').value = entry ? entry.item : '';
+  $('f_total').value = entry ? entry.total : '';
+  $('f_paid').value = entry ? entry.paid : '';
+
+  // المقاول
+  const contractorVal = entry ? entry.contractor : '';
+  if(entry && !CONTRACTORS.includes(contractorVal)){
+    $('f_contractor').value = '__other__';
+    $('f_contractor_other').style.display = 'block';
+    $('f_contractor_other').value = contractorVal;
+  } else {
+    $('f_contractor').value = contractorVal || CONTRACTORS[0];
+    $('f_contractor_other').style.display = 'none';
+    $('f_contractor_other').value = '';
+  }
+
+  // الكادر
+  const crewName = entry ? (entry.crewName||'') : '';
+  const crewType = entry ? (entry.crewType||'') : '';
+  const match = CREWS.find(c=>c.name===crewName && c.type===crewType);
+  if(entry && !match){
+    $('f_crew').value = '__other__';
+    $('f_crew_other_name').style.display = 'block';
+    $('f_crew_other_type').style.display = 'block';
+    $('f_crew_other_name').value = crewName;
+    $('f_crew_other_type').value = crewType;
+  } else if(match){
+    $('f_crew').value = `${match.name}|${match.type}`;
+    $('f_crew_other_name').style.display = 'none';
+    $('f_crew_other_type').style.display = 'none';
+    $('f_crew_other_name').value = '';
+    $('f_crew_other_type').value = '';
+  } else {
+    $('f_crew').value = `${CREWS[0].name}|${CREWS[0].type}`;
+    $('f_crew_other_name').style.display = 'none';
+    $('f_crew_other_type').style.display = 'none';
+  }
+
+  $('overlay').classList.add('show');
+}
+function closeSheet(){ $('overlay').classList.remove('show'); }
+
+$('fabAdd').onclick = () => openSheet(null);
+$('cancelBtn').onclick = closeSheet;
+$('overlay').onclick = (e) => { if(e.target.id==='overlay') closeSheet(); };
+
+$('saveBtn').onclick = async () => {
+  const month = $('f_month').value.trim();
+  const code = $('f_code').value.trim();
+  const item = $('f_item').value.trim();
+  const total = Number($('f_total').value)||0;
+  const paid = Number($('f_paid').value)||0;
+
+  let contractor = $('f_contractor').value;
+  if(contractor === '__other__') contractor = $('f_contractor_other').value.trim();
+
+  let crewName, crewType;
+  if($('f_crew').value === '__other__'){
+    crewName = $('f_crew_other_name').value.trim();
+    crewType = $('f_crew_other_type').value.trim();
+  } else {
+    [crewName, crewType] = $('f_crew').value.split('|');
+  }
+
+  if(!month || !contractor || !item || !crewName){
+    showToast('عبّي الشهر والمقاول والكادر وفقرة العمل');
+    return;
+  }
+
+  try{
+    if(editingId){
+      await updateEntry(editingId, {month, contractor, code, crewName, crewType, item, total, paid});
+    } else {
+      await addEntry({month, contractor, code, crewName, crewType, item, total, paid, createdAt: Date.now()});
+    }
+    closeSheet();
+    showToast(navigator.onLine ? 'تم الحفظ' : 'تم الحفظ محليًا — راح يزامن أول ما يرجع النت');
+  }catch(e){
+    console.error(e);
+    showToast('صار خطأ بالحفظ');
+  }
+};
+
+async function deleteEntry(id){
+  if(!confirm('حذف هذه الحركة؟')) return;
+  try{
+    await removeEntry(id);
+    showToast('تم الحذف');
+  }catch(e){
+    showToast('صار خطأ بالحذف');
+  }
+}
+
+function toggleCard(el){
+  el.classList.toggle('open');
+}
+
+function crewLabel(e){ return `${e.crewName}${e.crewType ? ' - '+e.crewType : ''}`; }
+
+function populateFilters(){
+  const months = [...new Set(entries.map(e=>e.month))].sort();
+  const contractors = [...new Set(entries.map(e=>e.contractor))].sort();
+  const crews = [...new Set(entries.map(e=>crewLabel(e)))].sort();
+
+  const mf = $('monthFilter'); const currentM = mf.value;
+  mf.innerHTML = '<option value="">كل الأشهر</option>' + months.map(m=>`<option value="${m}">${m}</option>`).join('');
+  mf.value = months.includes(currentM) ? currentM : '';
+
+  const cf = $('contractorFilter'); const currentC = cf.value;
+  cf.innerHTML = '<option value="">كل المقاولين</option>' + contractors.map(c=>`<option value="${c}">${c}</option>`).join('');
+  cf.value = contractors.includes(currentC) ? currentC : '';
+
+  const kf = $('crewFilter'); const currentK = kf.value;
+  kf.innerHTML = '<option value="">كل الكوادر</option>' + crews.map(k=>`<option value="${k}">${k}</option>`).join('');
+  kf.value = crews.includes(currentK) ? currentK : '';
+}
+
+$('monthFilter').onchange = render;
+$('contractorFilter').onchange = render;
+$('crewFilter').onchange = render;
+
+$('tabByContractor').onclick = () => {
+  viewMode = 'contractor';
+  $('tabByContractor').classList.add('active');
+  $('tabByCrew').classList.remove('active');
+  render();
+};
+$('tabByCrew').onclick = () => {
+  viewMode = 'crew';
+  $('tabByCrew').classList.add('active');
+  $('tabByContractor').classList.remove('active');
+  render();
+};
+
+function render(){
+  populateFilters();
+  const mVal = $('monthFilter').value;
+  const cVal = $('contractorFilter').value;
+  const kVal = $('crewFilter').value;
+
+  const filtered = entries.filter(e =>
+    (!mVal || e.month===mVal) &&
+    (!cVal || e.contractor===cVal) &&
+    (!kVal || crewLabel(e)===kVal)
+  );
+
+  // إجماليات عامة
+  const totalAll = filtered.reduce((s,e)=>s+e.total,0);
+  const paidAll = filtered.reduce((s,e)=>s+e.paid,0);
+  const remainAll = totalAll - paidAll;
+  const contractorsCount = new Set(filtered.map(e=>e.contractor)).size;
+
+  $('statsRow').innerHTML = `
+    <div class="stat-chip"><div class="n">${contractorsCount}</div><div class="l">مقاولين</div></div>
+    <div class="stat-chip"><div class="n">${fmt(totalAll)}</div><div class="l">إجمالي المبلغ</div></div>
+    <div class="stat-chip"><div class="n">${fmt(paidAll)}</div><div class="l">الواصل</div></div>
+    <div class="stat-chip"><div class="n">${fmt(remainAll)}</div><div class="l">المتبقي</div></div>
+  `;
+
+  const list = $('list');
+  if(filtered.length===0){
+    list.innerHTML = `
+      <div class="empty">
+        <div class="icon">📋</div>
+        <b>ما فيه حركات مسجلة</b>
+        اضغط زر (+) لتسجيل أول فقرة عمل
+      </div>`;
+    return;
+  }
+
+  // اختيار مفتاح التجميع حسب التبويب النشط
+  const groupKeyFn = viewMode === 'crew' ? (e=>crewLabel(e)) : (e=>e.contractor);
+  const metaLabelFn = viewMode === 'crew'
+    ? (rows)=>`${[...new Set(rows.map(r=>r.contractor))].join('، ')}`
+    : null;
+
+  const groups = {};
+  filtered.forEach(e=>{
+    const key = groupKeyFn(e);
+    if(!groups[key]) groups[key]=[];
+    groups[key].push(e);
+  });
+
+  list.innerHTML = Object.keys(groups).sort().map(name=>{
+    const rows = groups[name];
+    const total = rows.reduce((s,e)=>s+e.total,0);
+    const paid = rows.reduce((s,e)=>s+e.paid,0);
+    const remain = total - paid;
+    const pct = total>0 ? Math.min(100, Math.round((paid/total)*100)) : 0;
+    const subMeta = viewMode === 'crew'
+      ? `${rows.length} فقرة · يعمل عند: ${metaLabelFn(rows)} · متبقي ${fmt(remain)}`
+      : `${rows.length} فقرة · متبقي ${fmt(remain)}`;
+
+    const entriesHtml = rows.map(e=>`
+      <div class="entry">
+        <div class="entry-left">
+          <div>
+            <span class="work-item" style="display:inline;font-weight:600;">${e.item}</span>
+            ${e.code ? `<span class="code-tag">${e.code}</span>`:''}
+          </div>
+          <div class="entry-tags">${e.month} · ${viewMode==='crew' ? e.contractor : crewLabel(e)}</div>
+          <div class="entry-actions">
+            <button class="icon-btn" onclick="editEntry('${e.id}')">✎ تعديل</button>
+            <button class="icon-btn" onclick="deleteEntry('${e.id}')">🗑 حذف</button>
+          </div>
+        </div>
+        <div class="entry-amounts">
+          <div class="amt-total">${fmt(e.total)}</div>
+          <div class="amt-paid">واصل ${fmt(e.paid)}</div>
+          <div class="amt-remain">متبقي ${fmt(e.total-e.paid)}</div>
+        </div>
+      </div>
+    `).join('');
+
+    return `
+      <div class="contractor-card">
+        <div class="contractor-head" onclick="toggleCard(this.parentElement)">
+          <div>
+            <div class="contractor-name">${name}</div>
+            <div class="contractor-meta">${subMeta}</div>
+          </div>
+          <div class="chevron">▾</div>
+        </div>
+        <div class="ruler"><div class="ruler-fill" style="width:${pct}%"></div></div>
+        <div class="ruler-row"><span>واصل ${fmt(paid)}</span><span>من أصل ${fmt(total)}</span></div>
+        <div class="entries">${entriesHtml}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function editEntry(id){
+  const e = entries.find(x=>x.id===id);
+  if(e) openSheet(e);
+}
+window.editEntry = editEntry;
+window.deleteEntry = deleteEntry;
+window.toggleCard = toggleCard;
+
+initFormLists();
+watchConnection();
+if(initFirebase()){
+  listenEntries();
+} else {
+  render();
+}
+
+// تسجيل service worker للعمل بدون نت (شل التطبيق نفسه)
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
