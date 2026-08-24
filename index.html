@@ -145,6 +145,65 @@
   }
   select:focus, input:focus{border-color:var(--amber);}
 
+  .filter-chip{
+    font-family:'Tajawal',sans-serif;
+    font-size:13px;
+    border:1px solid var(--paper-line);
+    background:var(--card);
+    color:var(--ink);
+    border-radius:10px;
+    padding:9px 12px;
+    white-space:nowrap;
+    flex-shrink:0;
+    cursor:pointer;
+  }
+  .filter-chip.active-filter{
+    border-color:var(--amber);
+    background:#FFF7E6;
+    color:var(--navy);
+    font-weight:700;
+  }
+  .multi-select-list{
+    max-height:50vh;
+    overflow-y:auto;
+    margin-bottom:6px;
+  }
+  .multi-select-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:11px 6px;
+    border-bottom:1px solid #EEF1F5;
+    font-size:14px;
+  }
+  .multi-select-row input{width:18px;height:18px;accent-color:var(--navy);}
+
+  .stat-chip.clickable{cursor:pointer;}
+  .stat-chip.clickable:active{background:rgba(255,255,255,.16);}
+  .debt-line{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 4px;
+    border-bottom:1px solid #EEF1F5;
+    font-size:13.5px;
+  }
+  .debt-line .name{color:var(--ink);}
+  .debt-line .amt{font-family:'IBM Plex Mono',monospace;color:var(--rust);font-weight:600;white-space:nowrap;}
+  .debt-total{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 4px 4px;
+    margin-top:6px;
+    border-top:2px solid var(--navy);
+    font-family:'Cairo',sans-serif;
+    font-weight:800;
+    font-size:15px;
+    color:var(--navy);
+  }
+  .debt-total .amt{font-family:'IBM Plex Mono',monospace;color:var(--rust);}
+
   .view-toggle{
     display:flex;
     gap:8px;
@@ -361,8 +420,8 @@
 
 <main>
   <div class="filters">
-    <select id="monthFilter"><option value="">كل الأشهر</option></select>
-    <select id="contractorFilter"><option value="">كل المقاولين</option></select>
+    <button class="filter-chip" id="monthFilterBtn">كل الأشهر</button>
+    <button class="filter-chip" id="contractorFilterBtn">كل المقاولين</button>
     <select id="crewFilter"><option value="">كل الكوادر</option></select>
     <select id="unitFilter"><option value="">كل الدور</option></select>
   </div>
@@ -375,6 +434,27 @@
 </main>
 
 <button class="fab" id="fabAdd" aria-label="إضافة حركة">+</button>
+
+<div class="overlay" id="multiSelectOverlay">
+  <div class="sheet">
+    <h2 id="multiSelectTitle">اختر</h2>
+    <div id="multiSelectList" class="multi-select-list"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" id="multiSelectClearBtn">الكل</button>
+      <button class="btn btn-primary" id="multiSelectApplyBtn">تطبيق</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="debtsOverlay">
+  <div class="sheet">
+    <h2>تفصيل المتبقي</h2>
+    <div id="debtsList"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-primary" id="debtsCloseBtn">إغلاق</button>
+    </div>
+  </div>
+</div>
 
 <div class="overlay" id="overlay">
   <div class="sheet">
@@ -656,19 +736,15 @@ function unitLabel(e){ return e.code && e.code.trim() ? e.code.trim() : 'بدو�
 
 function crewLabel(e){ return `${e.crewName}${e.crewType ? ' - '+e.crewType : ''}`; }
 
+// ===== حالة الفلاتر (اختيار متعدد للشهر والمقاول) =====
+let selectedMonths = new Set();       // فاضية = الكل
+let selectedContractors = new Set();  // فاضية = الكل
+let tempMultiSelect = new Set();
+let multiSelectType = null; // 'month' | 'contractor'
+
 function populateFilters(){
-  const months = [...new Set(entries.map(e=>e.month))].sort();
-  const contractors = [...new Set(entries.map(e=>e.contractor))].sort();
   const crews = [...new Set(entries.map(e=>crewLabel(e)))].sort();
   const units = [...new Set(entries.map(e=>unitLabel(e)))].sort();
-
-  const mf = $('monthFilter'); const currentM = mf.value;
-  mf.innerHTML = '<option value="">كل الأشهر</option>' + months.map(m=>`<option value="${m}">${m}</option>`).join('');
-  mf.value = months.includes(currentM) ? currentM : '';
-
-  const cf = $('contractorFilter'); const currentC = cf.value;
-  cf.innerHTML = '<option value="">كل المقاولين</option>' + contractors.map(c=>`<option value="${c}">${c}</option>`).join('');
-  cf.value = contractors.includes(currentC) ? currentC : '';
 
   const kf = $('crewFilter'); const currentK = kf.value;
   kf.innerHTML = '<option value="">كل الكوادر</option>' + crews.map(k=>`<option value="${k}">${k}</option>`).join('');
@@ -677,10 +753,73 @@ function populateFilters(){
   const uf = $('unitFilter'); const currentU = uf.value;
   uf.innerHTML = '<option value="">كل الدور</option>' + units.map(u=>`<option value="${u}">${u}</option>`).join('');
   uf.value = units.includes(currentU) ? currentU : '';
+
+  // تنظيف الاختيارات المحفوظة من قيم لم تعد موجودة
+  const allMonths = new Set(entries.map(e=>e.month));
+  const allContractors = new Set(entries.map(e=>e.contractor));
+  selectedMonths = new Set([...selectedMonths].filter(m=>allMonths.has(m)));
+  selectedContractors = new Set([...selectedContractors].filter(c=>allContractors.has(c)));
+
+  updateFilterChipLabel('monthFilterBtn', selectedMonths, 'كل الأشهر');
+  updateFilterChipLabel('contractorFilterBtn', selectedContractors, 'كل المقاولين');
 }
 
-$('monthFilter').onchange = render;
-$('contractorFilter').onchange = render;
+function updateFilterChipLabel(btnId, set, allLabel){
+  const btn = $(btnId);
+  if(set.size===0){
+    btn.textContent = allLabel;
+    btn.classList.remove('active-filter');
+  } else if(set.size===1){
+    btn.textContent = [...set][0];
+    btn.classList.add('active-filter');
+  } else {
+    btn.textContent = `${set.size} مختارة ✓`;
+    btn.classList.add('active-filter');
+  }
+}
+
+function openMultiSelect(type){
+  multiSelectType = type;
+  let values, current, title;
+  if(type==='month'){
+    values = [...new Set(entries.map(e=>e.month))].sort();
+    current = selectedMonths;
+    title = 'اختر شهر أو أكثر';
+  } else {
+    values = [...new Set(entries.map(e=>e.contractor))].sort();
+    current = selectedContractors;
+    title = 'اختر مقاول أو أكثر';
+  }
+  tempMultiSelect = new Set(current);
+  $('multiSelectTitle').textContent = title;
+  $('multiSelectList').innerHTML = values.map((v,i)=>`
+    <label class="multi-select-row">
+      <input type="checkbox" data-val="${i}" ${current.has(v) ? 'checked':''}>
+      <span>${v}</span>
+    </label>
+  `).join('') || '<div style="padding:16px;color:var(--muted);text-align:center;">ما فيه بيانات بعد</div>';
+  // ربط checkbox بالقيم الفعلية
+  [...$('multiSelectList').querySelectorAll('input[type=checkbox]')].forEach((cb, i)=>{
+    cb.addEventListener('change', ()=>{
+      if(cb.checked) tempMultiSelect.add(values[i]);
+      else tempMultiSelect.delete(values[i]);
+    });
+  });
+  $('multiSelectOverlay').classList.add('show');
+}
+function closeMultiSelect(){ $('multiSelectOverlay').classList.remove('show'); }
+
+$('monthFilterBtn').onclick = () => openMultiSelect('month');
+$('contractorFilterBtn').onclick = () => openMultiSelect('contractor');
+$('multiSelectClearBtn').onclick = () => { tempMultiSelect = new Set(); openMultiSelect(multiSelectType); };
+$('multiSelectApplyBtn').onclick = () => {
+  if(multiSelectType==='month') selectedMonths = new Set(tempMultiSelect);
+  else selectedContractors = new Set(tempMultiSelect);
+  closeMultiSelect();
+  render();
+};
+$('multiSelectOverlay').onclick = (e) => { if(e.target.id==='multiSelectOverlay') closeMultiSelect(); };
+
 $('crewFilter').onchange = render;
 $('unitFilter').onchange = render;
 
@@ -695,20 +834,54 @@ $('tabByContractor').onclick = () => setActiveTab('contractor');
 $('tabByCrew').onclick = () => setActiveTab('crew');
 $('tabByUnit').onclick = () => setActiveTab('unit');
 
-
-function render(){
-  populateFilters();
-  const mVal = $('monthFilter').value;
-  const cVal = $('contractorFilter').value;
+function getFilteredEntries(){
   const kVal = $('crewFilter').value;
   const uVal = $('unitFilter').value;
-
-  const filtered = entries.filter(e =>
-    (!mVal || e.month===mVal) &&
-    (!cVal || e.contractor===cVal) &&
+  return entries.filter(e =>
+    (selectedMonths.size===0 || selectedMonths.has(e.month)) &&
+    (selectedContractors.size===0 || selectedContractors.has(e.contractor)) &&
     (!kVal || crewLabel(e)===kVal) &&
     (!uVal || unitLabel(e)===uVal)
   );
+}
+
+// ===== تفصيل المتبقي (يظهر عند الضغط على بطاقة "المتبقي") =====
+function openDebtsBreakdown(){
+  const filtered = getFilteredEntries();
+  const byCrew = {};
+  filtered.forEach(e=>{
+    const remain = e.total - e.paid;
+    if(remain<=0) return;
+    const key = crewLabel(e);
+    byCrew[key] = (byCrew[key]||0) + remain;
+  });
+  const rows = Object.entries(byCrew).sort((a,b)=>b[1]-a[1]);
+  const grandTotal = rows.reduce((s,r)=>s+r[1],0);
+
+  const list = $('debtsList');
+  if(rows.length===0){
+    list.innerHTML = '<div style="padding:16px;color:var(--muted);text-align:center;">ما فيه مبالغ متبقية بهذا الفلتر</div>';
+  } else {
+    list.innerHTML = rows.map(([name, amt])=>`
+      <div class="debt-line">
+        <span class="name">${name} يطلب</span>
+        <span class="amt">${fmt(amt)}</span>
+      </div>
+    `).join('') + `
+      <div class="debt-total">
+        <span>المجموع</span>
+        <span class="amt">${fmt(grandTotal)}</span>
+      </div>
+    `;
+  }
+  $('debtsOverlay').classList.add('show');
+}
+$('debtsCloseBtn').onclick = () => $('debtsOverlay').classList.remove('show');
+$('debtsOverlay').onclick = (e) => { if(e.target.id==='debtsOverlay') $('debtsOverlay').classList.remove('show'); };
+
+function render(){
+  populateFilters();
+  const filtered = getFilteredEntries();
 
   // إجماليات عامة
   const totalAll = filtered.reduce((s,e)=>s+e.total,0);
@@ -720,8 +893,9 @@ function render(){
     <div class="stat-chip"><div class="n">${contractorsCount}</div><div class="l">مقاولين</div></div>
     <div class="stat-chip"><div class="n">${fmt(totalAll)}</div><div class="l">إجمالي المبلغ</div></div>
     <div class="stat-chip"><div class="n">${fmt(paidAll)}</div><div class="l">الواصل</div></div>
-    <div class="stat-chip"><div class="n">${fmt(remainAll)}</div><div class="l">المتبقي</div></div>
+    <div class="stat-chip clickable" id="remainChip"><div class="n">${fmt(remainAll)}</div><div class="l">المتبقي (اضغط للتفصيل)</div></div>
   `;
+  $('remainChip').onclick = openDebtsBreakdown;
 
   const list = $('list');
   if(filtered.length===0){
