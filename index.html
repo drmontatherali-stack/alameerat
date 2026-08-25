@@ -14,46 +14,12 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 <style>
-  :root{
-    --navy:#16233B;
-    --navy-soft:#2A3B5C;
-    --paper:#EDF1F5;
-    --paper-line:#D7E0EA;
-    --amber:#D98E04;
-    --amber-soft:#F5D68A;
-    --rust:#B7472A;
-    --ink:#1C2431;
-    --muted:#5C7186;
-    --card:#FFFFFF;
-    --radius:14px;
-  }
+  :root{--navy:#16233B;--navy-soft:#2A3B5C;--paper:#EDF1F5;--paper-line:#D7E0EA;--amber:#D98E04;--amber-soft:#F5D68A;--rust:#B7472A;--ink:#1C2431;--muted:#5C7186;--card:#FFFFFF;--radius:14px;}
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
-  body{
-    font-family:'Tajawal',sans-serif;
-    background:
-      linear-gradient(var(--paper-line) 1px, transparent 1px) 0 0/100% 28px,
-      linear-gradient(90deg, var(--paper-line) 1px, transparent 1px) 0 0/28px 100%,
-      var(--paper);
-    color:var(--ink);
-    min-height:100vh;
-    padding-bottom:96px;
-  }
-  header{
-    background:var(--navy);
-    color:#fff;
-    padding:22px 18px 20px;
-    border-radius:0 0 22px 22px;
-    box-shadow:0 6px 18px rgba(22,35,59,.18);
-    position:relative;
-    overflow:hidden;
-  }
-  header::after{
-    content:"";
-    position:absolute; inset:0;
-    background-image:repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, transparent 1px 24px);
-    pointer-events:none;
-  }
+  body{font-family:'Tajawal',sans-serif;background:linear-gradient(var(--paper-line) 1px, transparent 1px) 0 0/100% 28px,linear-gradient(90deg, var(--paper-line) 1px, transparent 1px) 0 0/28px 100%,var(--paper);color:var(--ink);min-height:100vh;padding-bottom:96px;}
+  header{background:var(--navy);color:#fff;padding:22px 18px 20px;border-radius:0 0 22px 22px;box-shadow:0 6px 18px rgba(22,35,59,.18);position:relative;overflow:hidden;}
+  header::after{content:"";position:absolute; inset:0;background-image:repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, transparent 1px 24px);pointer-events:none;}
   .header-top{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
   .logo-img{width:42px;height:42px;border-radius:11px;object-fit:cover;box-shadow:0 2px 10px rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.18);flex-shrink:0;}
   .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--amber-soft);text-transform:uppercase;}
@@ -83,6 +49,47 @@
   .debt-line .amt{font-family:'IBM Plex Mono',monospace;color:var(--rust);font-weight:600;white-space:nowrap;}
   .debt-total{display:flex;justify-content:space-between;align-items:center;padding:14px 4px 4px;margin-top:6px;border-top:2px solid var(--navy);font-family:'Cairo',sans-serif;font-weight:800;font-size:15px;color:var(--navy);}
   .debt-total .amt{font-family:'IBM Plex Mono',monospace;color:var(--rust);}
+  .page-nav{display:flex;gap:0;background:var(--navy);padding:10px 12px 0;}
+  .page-nav-btn{flex:1;padding:12px 8px;background:transparent;border:none;color:#8FA1BD;font-family:'Cairo',sans-serif;font-weight:700;font-size:14px;cursor:pointer;border-bottom:3px solid transparent;}
+  .page-nav-btn.active{color:#fff;border-bottom-color:var(--amber);}
+  .alert-banner{background:#FFF3E0;border:1px solid #F3CB86;border-radius:12px;padding:12px 14px;margin-bottom:14px;}
+  .alert-banner.danger{background:#FDEBEA;border-color:#F0B4AE;}
+  .alert-banner-title{font-family:'Cairo',sans-serif;font-weight:800;font-size:13.5px;color:var(--rust);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+  .alert-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px;border-bottom:1px dashed rgba(0,0,0,.08);}
+  .alert-row:last-child{border-bottom:none;}
+  .alert-row .wa-mini{background:#25D366;color:#fff;border:none;border-radius:8px;padding:5px 10px;font-size:11.5px;font-family:'Tajawal',sans-serif;font-weight:700;cursor:pointer;}
+  .unit-card{background:var(--card);border-radius:var(--radius);margin-bottom:12px;box-shadow:0 2px 10px rgba(22,35,59,.06);border:1px solid #E4E9EF;padding:14px 16px;}
+  .unit-card.overdue{border-color:var(--rust);}
+  .unit-card.today{border-color:var(--amber);}
+  .unit-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+  .unit-code-big{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:16px;color:var(--navy);}
+  .status-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;}
+  .status-ready{background:#E4F5EC;color:#2E7D53;}
+  .status-inprogress{background:#FFF3D6;color:#9A6A00;}
+  .status-notready{background:#FDEBEA;color:var(--rust);}
+  .unit-dates{display:flex;gap:14px;font-size:11.5px;color:var(--muted);margin-bottom:6px;flex-wrap:wrap;}
+  .unit-due-tag{font-weight:700;font-size:11.5px;padding:2px 8px;border-radius:8px;}
+  .unit-due-tag.overdue{background:#FDEBEA;color:var(--rust);}
+  .unit-due-tag.today{background:#FFF3D6;color:#9A6A00;}
+  .unit-due-tag.soon{background:#E7F0FB;color:#2A5C9A;}
+  .unit-beneficiary{font-size:13px;color:var(--ink);margin-bottom:2px;}
+  .unit-phone{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);}
+  .unit-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+  .unit-actions .btn-mini{font-family:'Tajawal',sans-serif;font-size:12px;font-weight:700;border:none;border-radius:8px;padding:7px 12px;cursor:pointer;}
+  .btn-mini.wa{background:#25D366;color:#fff;}
+  .btn-mini.edit{background:#E4E9EF;color:var(--ink);}
+  .btn-mini.del{background:#FDEBEA;color:var(--rust);}
+  .status-filter-row{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;}
+  .phone-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:0 2px 10px rgba(22,35,59,.06);}
+  .phone-table th{background:var(--navy);color:#fff;font-family:'Cairo',sans-serif;font-size:11.5px;padding:9px 8px;text-align:center;}
+  .phone-table td{padding:8px;border-bottom:1px solid #EEF1F5;font-size:12.5px;text-align:center;color:var(--ink);}
+  .phone-table tr:last-child td{border-bottom:none;}
+  .phone-table input[type=tel]{width:100%;padding:6px 8px;font-size:12.5px;text-align:center;border:1px solid var(--paper-line);border-radius:8px;}
+  .phone-table input[type=tel].saved{border-color:#3E8F6B;}
+  .phone-code-cell{font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--navy);white-space:nowrap;}
+  .reminder-banner{background:#EAF3FF;border:1px solid #A9CBF0;border-radius:12px;padding:12px 14px;margin-bottom:14px;}
+  .reminder-banner .alert-banner-title{color:#2A5C9A;}
+  .reminder-banner .wa-mini{background:#25D366;}
   .view-toggle{display:flex;gap:8px;margin-bottom:14px;}
   .tab-btn{flex:1;padding:9px 4px;border-radius:10px;border:1px solid var(--paper-line);background:var(--card);color:var(--muted);font-family:'Tajawal',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
   .tab-btn.active{background:var(--navy);border-color:var(--navy);color:#fff;}
@@ -136,6 +143,12 @@
 </head>
 <body>
 
+<div class="page-nav">
+  <button class="page-nav-btn active" id="navAdvances">💰 سلف المقاولين</button>
+  <button class="page-nav-btn" id="navDelivery">🔑 تسليم الدور</button>
+</div>
+
+<div id="advancesPage">
 <header>
   <div class="header-top">
     <img class="logo-img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAACgCAIAAAAErfB6AAAgk0lEQVR42u2daZRdV3Xn997n3OlNNauqNJRkydZg2Rrski1LtjxjG89jDAZMwEAgMZkD6e6sJkmTrA6hgU7oEBMCYTQ4EIHxDDbyKCRbtixLtjVVqUqqKtVcb7zDOXv3h1cyxkmvrM4i4ZVy/0sf6oP0VOv+3t5nnz1d/OQHrwAAABARSHVyCREpfQont1LAJ7l06plTC06VAk6VAk6VAk6VAk6VAk6VAk4Bp0oBp0oBp0oBp0oBp0oBp0oBp4BTpYBTpYBTpYBTpYBTpYBTpYBTpYBTwKlSwKlSwKlSwKlSwKlSwKlSwCngVCngVCngVCngVCngVCngVCngFHCqFHCqFHCqFHCqFPAvTAiAKWB9MkJlBAYARBAglhOYEQEATyz2kxM/4Um96+8ks2AU0CRECNZEbGMgRKVJOYAkIgACoASUAAkgIwhIasFzSAwQW6ViozvmL6mG8dToEHFNK+U75GhEYQsggCBWgEEEAPhkewgnMWBk5ajxmdpZ511y250fKk4Vi9OjR/sP7N+752j/oamZKU3iOeAocrQCFkSROmcBREwBN/x5g3q6WFt+Ru+t7/1Qcab0d1/464U9i1adccb17zpH2I6Ojh4+sP/I67tHjg5MFssOQsb3tSYEELHMTEQp4MaVIqxUw0WnnH7RFTc8/vhPzl63emL44ET/7pefetDLFhYsXrps5epVZ67deNElbOJjfX2v79vbf+BAZXLMxYrWjgjAyXgez2HACIBCglaQmVQt5mz7/He+78N/+/m/WnjqaXrDGQ4lhZxKwjCpjQ++Onl4704hlWvvXHbq8hXLT7/8yisyt906MT768De+Mtj/WuB7wijIAICi67AFWABwLl+35rYFIwCIgIKIhd3sHR/66GOPPHD0wO5zN50dJXFi2HpB65IljqbjI8OUhCIcTQ3uebrvxW0/9nItblvrnR/8tXk9y/v6X0USsFrQCIoSF0AA2YIAMIiau1fqOQxYQAAjQTTgxDF/+KO/se/FF3Y8/Wiu4IPSbMjG0LJkwbyeU11XdS9bNTkxXigUwkql/8CBplxhplg6OnB0anh0tFicihIk5YinnECRJUUCwsIk9f9mDvvuuW3BjNagO1Mx7/nAbwwNDT96//c6Wt2pyaLvBXFsCalWLB4/crhaLS9fcaor5tC+3Wefd7Hr+HG1tGHjuf9031ZPues29AZ+FBVLk8OlcqlYDatgQlagHOUr8tAREJsC/uXYMKlSxVx+7e2OF/zTt/+mOa8xjgjAcdwwDkmxqZXHypWwWt4+cizIeIDw4vM7stlg7Fi/55LjuiJ6YmhAWbNq9emF3nngqlpYqZXCkcnRiYmxqaFhU6kRGECbAv4PP4ARRRxSzpr1G5/48cOCoUPKsQoE3SCI47BWnVrae/ZlN//qsSOHBgb6Bwb6jw8PHzvWz3HRUbDnlbgUKi/IHD906IWdP9qpHXJash0t3fMXtrQubF94yrI1Z/V0dX3tM39VnhrSLszRhOZcPoOFUECgYi052tFkFPsWOSZXOU5UK5ok8Vq7RiYn9768c/XyNStWrqOMY+OkODF+bPDwgf2vT5QGlcMC0t65ZNlpy4X08OjowQMHXH24vG3GybZ8/L/9sRtomTIAeo4exHPaRSMCKG0VKWssigVWrKxFVI6bzExay56XGTs28ORDW1958kl28tjitbcs7OpccOqKU9f3bvrUn39SwCRJFPi5bCY/MTVx6cUXHRk84rnoa/rJsy8Jc8IR4hy+H8/xaxKCIq0URXEMgCIMAoiolTJJgohaRBnTnA9amoLI2mo0MT4wNbhv1+svt9/+vrsYEch1icvTYyNHneliceBQrliuDg70n7XmDM/1RCSKE8D0HvxLugQzCzlEpKxJkBAAEVEp5ThOHEWA4Go3DEOLXKwUWXSiI4khm8u3tBQQQESQyHIiYo4dHQBFO3c853oZX3t7X9pNXjNba61Born7+rC5nqoUQiSiJEkQERGsMClNimq1GiIp14nDaCo2F2+5aOXpZzkeHh8++sD9D7UoxYTCjACJFXTcru4uQZicmkpCE8c1NmE218GWE2PUXH5Acz69jqSJ0JiEgABRWBQioYrCGhE6vj9eKm3YcsmKdRsefmzb1u8/Jk7uhne8K0GHBQnAUaoaJ00tbcuWr1zYs2TjBVsiYwLXVYSKiNmaJMEU8C/JRVuRxGKzaKGkoq1OiEAgI6zcVqnVHBCrdeD5a1at+8HXv1I89mo03v/gvV9raW5fsvzMMKpqxagVAoblytDhvtdffjmplrUSy5GVhBwCFm1EpWfwL/OqRA6imCQiwHo0pBAV6ahWQ0ARCVxvenwyicKM72qiOKaBIwOdXV3WGCQCRECoVivDx46Rwl3P73QUMbOAaK2sMDOjwrmbrJzbLlpAkBAAjLV1uiJCREqrJDFaa4XIxgqLWFZIIrOpZUc7IECICBBFoVIEwEkc2ShUiAggAo7jsLXMdk4/orkMGAEAiBQDIAARgswCBoAkSYgQkWySOADCTAIkwsyu6zqORhClFBGiAkEmAAfBEUBrAUFEHMcBZmFJAf/SCLNlrTUzJ4lBQBZGQEdrEYjjWClFRGxZWKDeXCmikOpCAKUUABhOAADEojABk4gAiojWOjFGYG538+g5aLRv+hlFayXM1iaAgCKMgK4n1tTiKipSqIw1lkV+dpNFFkAkFiClQEASULPFR6m3ESCAAJJ2Y1PvwCV869GQAv73ofsWwIiotQJgay0iE0iIZFyPrAm5ZBGIlUUxbGc7ZBEZgAFJOwkjIKGgjlGAWCwgghAAAYiIUjqITcKQEL6puXquAZ7jQRYLERnm5MRtVURc1wXAOI61VtZax3HqGas6GSJyXVc7DoAg4qy5/jMvgWI8h4CNTQziHH5Kcz6KdrQGAGMMICKiiDiugyJRFGmtQYRIGWvxjagbZ5EaYxFJRJj55z8UAVABgwlrpSKRYkmLDf/Bvro+hIIgAtpxgOu31VkLdnT9esNEyjKzMCfmjSMYiQRAEVm2RGSMMcYQvWHKwogkkg28A3tefOWVV3OFgkiSAv7lYGa2SmvH9ay1oJGZRURpFSdGhD3fF2ZrrRjzM5eFKABKKbZGOUo5+o3DHREBiZAUiIdQi6uJsAOWmd8USSNivc0S32r6KeD/z5Cq3rhKgoDAACziiJCAYP3GiwjkUVQ99OJ2JSzg1D2udrKhLcesgFwrBoCMMSSzLZiGlFKYz2bGKaOtH05MK6qSEhFMEsuJxGIiQC1gwJBrE1QKgEjVPwDE2sRYFBSbdbVCkNnvh6SA/y1hc304TBAIqQ5JBICgfqvNBdnRw68ee213k+sAC2kWYcfLCMUmsUQaOFFItTimN74wojOOO37s8PHR/umpI9/66mdnrI0qiedl2tvmd3R0tXTOL8yb39TUlMvlcrmsFwSuo5CUABjDca06PTM1U5yoTBzf8ZNHk3JREYIApxb8b+Ars3aMsZUoSZAtMAvDLGEBQgYEpbW1llDQsuO4YXGm75WXPUk8AhTDnFg2gvXuV/RtouLyQ49sHZ0YAlWdqMKi5Refdc7GpUuXNDc3K6XCWhjXwlKpOFMsjo+PWWuZrUZ0/SDf3JIpNM9funJFrmP/nidmfvj9rHKADYA0bON04wLmekcOsLEmX2hd2L0g39bV1j4vG2Q95YpQHMelylSpWCwXi9Mz01OT07XyBEeVV/fsO3xwXy7wHaVd30UboxhAAQQW9Jz4xz/8TjlWSRisWNV79fU3tc9rH+jv27nt8aNHj0xOTtSK0xBHLMyWebZFBFCYiER5IXh3f/yP1CL+9te/ztaiavRicQNbMKIIIAoIu0Hmrrt/F/326ampsFqOKmUTh8zc5SzyAt91PUJUWhdnJkaO9O3avvvQ6y862sQWX3p+54LFCyujBlEYgQmRaKpciST3zjt/7Yx15z37+GP3fuFTE2OjpLQwO66f85TjWkAEVIQOgIgICmuFE8XKpksvOW1V7yPf/Zup4b72fAaSUIAEFDSqk25cwHKiPOQ46sjAwMMPPXrZ22/57J/+ydTEsEtGSUQkhhWg0lpnspnA9zsXLV6ycv0N73h3debSh7Z+o//Q0cHjRVI8OT6mNTEAKj1TlUJL12/85m+Vy8VP/dlHpkaHWwK/uaWpWo03X3BJrRrv2vkcZVxATJIkrFVIKT8IFFAcJdnWzstvvGNk/Pgzjz3Q5osyNQGwQNLAXVvqkrOXNaoB14s6gKS1ouHDBzacvyXXmnltz3OdPrpKWEGztjlPHDRJWI1q5cH+vr27dr6881ml9NW3vJO93OG+Q8WxYxSXAmJArIQ207rqt/7wv7/6yvav3vMpbcqFbMCgAGUmtFfe9i6S+OC+59nRxXI1k2+5+KobFyxe2X9gMKdhslbcfNN7Vp55/g/+4fPDh/YEns8CAjS7KqJRb5INnMkSARBBMiyuUlFp+vEH79904eXzexZXajGIJicoG5gox0b5kdC5F156wcUXBZo9NE8/+tDnP/UX69etve3222PDqD0GHVvQmdxHf/93dm5/+t6v/n1TNuerLMbkcqwlJqXJzYxMTI+WQsl3XvuuD/7Bn32295K3V61CBVFc65x/6vkXX9t3eO/e5x/PZQLLWN8DAY09uzQHUpV17+dnMjuffmZ6bPzyq24OjR9FeO7GC+7+k8+tPf+a6dgdmY4p09rUNp8to3B7c45r01/4n5/o7mq/4VfuGJ+pRTo/E9Edd31kaPDV733rC23NebTIVqEoV2KySSHflG/uiDBz069+5A//5NOr1pz9nXvv/eQf/t4zTzzienHRJJsvvyXwm37y4PeFKzB3OqUb10X/vDGL1rparhmii6664ZVduysz0+PjI5WQt1x6xXlbLpycnFHab2vr2Lf7+YzvizGOQkX2+R3Pv+26GxzHfWnPvs0XX967cfM9n/tzTxuNiAIkCgGUhnIl7li84vzLr1u7bl1nW/bR7379H//hi6N9r+ZU0uxaY6v5rlNuevfdw/19D9335ZxnAeZGpyUizplUpWWbD+j557ZdfuOtF15x5bfv+Zxv+LlHtr7w5I83XnTZne+/ywmahgcPxaATUBqZ2bqKwrC29Vtf7z3v/Ew+f+W11/7o0UfL0xOthYxNBAEUGFF6LHRa2ttvuP1OrZwnH7hv29avhbViUzaDWiEYBKxVogtuvEIH2R8/cp+Oph2nkIiZKzXDuWHBdXmKxktFp9BywZbLdz27zdTGC76rRPa/9urOHTta2zrOOOucSrn82quvZYMAwLJYx3XK01O7nn9h9fres885796vftnHRIkQkEIE5Jlqtef0jR/+/f+iXe+ez/2vF37yYMFlL/ATBiHHkhMbzrYsuOV9Hx2eGHr4e3/XRBbYZxQAbvypcJxblU5rVVOgdz75oKC37pxLylFswCGE9rzjROPfuefPtn7t/9zy7g9e/447p2pRLKRIoTE5F7WN16zfMDB4NJ4ec0mhKAVkrZqq4YVX3/rrH/uvxwaPfPaPPzayf2d7S4BKxFSRMBEFpKOwturcy7xs24vbHkrKM1YrS1UAO1dm/udUNUmSjFYjw0OvvrR9y2WXPbXtu2ATBGYrDKj83MP3f3+wr/+9v/mx5qbm7331HhsWXd+PjXhB0LOoZ//BQyDWQW0RKiFTpuWdd71/7caLntn2yDe//CUX2dPe8cmio6AQZBQnGpLEepTruOCSy0szY7u2P5P1AxaeW0X0OdWygwYYs6ie+dH9qz/+iZVrN732zMOFXGAsZwvN7W2dq7J5G4Y7tu+89Mqbm9q6vvelTxfHR/wgQC25QnO5WKpfWouVqLNn1W0fuLv7lJUAsmbtuuWf/PMoqoal6VpYHR0ceOqxBzNS80lmKuact1/X0tnz4He+WJoab8trSazgXBo3nEuADYpinXOcw3t/enjPc1def9u+HU8lgLExa1auWLa21ySczzZJpv3Y6MiyVevf+3t/+s2//czw4X2ZXBMqFUUhEk7VzLI157zzQ78dNHVOTgw/9/RPktJ4tVRMkghtEmSCSnFGmFG7pShqn7/4bdfdMnZ0/0+feCTvazExAAkQAqeAf/FKlLbW90WybnL/fV/56H//4mXX3frAP36jpRDseG77008/bYWUgCJyvMw1t7+n9+Kb33/3737pLz8xNVMmpZVWYaW85oK3vfvDf6DcfHlq7Guf/8u+117MOCAshCBsUUArzGYyNXYiHbzr/R8JguDvP/MFG5ZyPjBbnt1zKZhG0b9wMSGKQrauC2NjY9WZ2pXv+MDRgf7BgSPNOd8jG7jadVReJdqUX3zhxY75PYtOWzc6dPjg/oOXX3vjnldeQ4C7fvuPtF8IS1N//9d/MXhgV2eT72nPd1xXo+85nku+jwmb6cj9lbt+Z9X6C777lf+974VnmzIe19ungQAIQeZEiDWX7sEA4FhAiESBsU5L1vvp41ubFy99792//cVPV/a/9NN5Tb4AxIrEkKM8V7zvfPlL3QsXo+vHSRSHUeeSFRs2X+oELaZW+sY9nx58fWdLzo1trKwrWM+YCZGeDiuJ8m9576+dteniH2395o5tjzRntbVxHS0AEMylYZa5ZMFv7otGBOW4u17Y2dHWfN3td0RRsmd/f82glsQFcVEC14mq5aNHj+QzzrEjhzacf9mqM3vzTU2E8f33/t2uZ59oK2TBCgm6FNfnzcKYS5Wka9Gqd//6x87s3fjDf/riQ9//ZmvGgzk7noSIcxUwsxCir2X3ju1JFF196zvXnrvFklOtJbVYKqEtVmMDODx6fHRowFN05oZNhfaFCPjEA9++/x+/lvOcOIyiyNQSLhkzE7F1CvMWr7zyxjtuft/djpv9+pf+4pkn72/NKmUsCM7RLQ5zzEW/5VcHEQ2c9Z1tD/9g756XL7ryuuuvvda57R1htVyenqrVqmEUIeHQ/t0Pbf1uuTgDzGPHh/a+sm/1mg2OAt9zHTcgL5NrbVvQs6Rn0eLWzm4bx9se/eFTj/5ganKwLRuQMSQAcyhontuJjrekPQQsgoAUMv7MyMB993z6kZa2BT0r5i1alG9uzecKQcbTXj7T3J5YnpmeJqLOrra7P/5JAAQIAWx9SsWGcXF6YmTg4FMP3rd39wul6RFXQ4dfgFgJWMBIGrjl6l+3hP/xgbc1lBOG2QCVBahecBVABDnx502AASwKAKCgIo0A1ppaHBorVgAJEYDR09rJqKTQ3NbUsVBpFwnZGmviMAojk1RrtTiMTK3McZXEBK52HM2CVhwGRSBKLKNwPQqb/f8RkOsvfah3FAFQfUGt1LfJAwNCIwTajeiicZYdnvihPnIg/+LNBGE2qcRsUZCQskFwIiIGAWBUwKKFw8mhqZHBSLRCS7MuHoiIlBJCX6Gb9VGABdgIIDGxJQsCyiIK/PytV95400N9oA3rv93s2uHGGnRpHMBCgADAQDI7PiAEFlhgtveu3kHxc18FzfWGCgZkIUEhsPoN+0YEBIP1rjnSmawXoLJSByGz0/4ingiCqtWMInKVEjAAVgEggwIAFJr9GnG9zi8ADASCgiD1wjAS0awfx9npxEbJg1AjmW59mB4FKDISWYiNIDCBBRELivFE+zqCILAIMiOgCDAQI1kiFmABASRSAKSQgJlBWdDGipgEhJktM9fdAyEohCixXYuXBYX2iFFIWQUASICWJWIbGznxohZiYEAGmf3eCSkm1wAZnJ0ibrT8FjUO3llnC8CoW9q78m1dQXNHIiiIoJyEvIQFCFGTIAICKgINoMAqHYsTSya0DitlFSUIpbBWDGu1JAbHi8GJyGXlCWlEQsT6mof6kL+gRce98sZblq5ZX07YKB2iSkAZUW42n2ufV5g3n5Vv0K0lNgGyRIhAhCJgLAjp6279FXBUIiw0W4ZonJCsUe7BCIIoAMRAQuq8Cy/uWtTj+Jnjg0eEObTot8y77sbrDr6+r1Qqh1GotGbmaqXISOh4l117U2y9LZdcfvDAXmPZ8byzejfMX9QTZIL9Bw+vPXfzmt5zd72wSxEqwjiOAYCI4jgpV0pAYLTXufjUw/2D63rX+dnMmb0bhOFI35HT15217IwzOruXHBsYqoThlddcMzo2Wo1jjVCrhcr1ooQvueKqto6OlrbmPbtfygYBMpPUD+2GCLIaxYIZ0aADQg4Lx8lMrdKyYFm+uSsEd/GK1e1dXRptz6lra9Rx4TXvuvm9v2VVvq17ye2/+YnulWtK1nYvWZxpal7Yc4rLQsZKaDJexnMy2ZbuVWdtamrtaG9t6+rqWr32rDI7p515Vra5pRIlp60/9/aPfHzRirOLxVo+nyeU1o5uN9/R1bUkG2QdgsmJqUL70ty8RdbPrNl4wekbzk9ULuFM2eLpG87JtbYLqdf2vfrADx7s6x+74qobbGIQRJC4YWy4YVy0QN2qqrVwxRlrzuzd1D9w7Ix1GyaK0frzL5u/dOX4THlqurzunE2LTl1llHfdrbcfHRk9eGjg6lvuEDdXqsYRS2RsJU56Tjtt7abN3/v+/Q8+/MiBvsG3XX9LaKBYCZeuWrN+80VD48UtV11P2RaVa7nk6uv7jo5eddPtTH5sxAKWawmzShI2VizSNTfdcuzocEfn/HxHV1v3wpnQ3vqeD1xz8zvKIZ1/6fXktZy75W1evuPM3s3FiNduOA+1CwIA3DguuoGuSYoBCAyik8uHRiYnJ3NNTT2nrWrt6umsxEuKNdfXuYxXrdUOHjp0zvrVru+//vq+87ecv3LVumyhFYm071bYqlx+02WXHhocFIEFS1YwoDgOBbmaRauCZaevKbR3d52ysn1B5AW5oaEBd9O5Te3zCq1t8+YvauuaPzY25nkuKA3kZHKFkeGjp5+5ZulpK7b/9PmXXnopmwnefed7Hn3gR+UStHaesuLM3smZmZ5TlrIbJIxWkBDpRLSYnsE/F2QRIAOgq4+OjCxZvPT0FStGjw1s3Lz52LFjjqPP7u098trLP37s0XkLF2+64OLpiaH581ovu+raqFxevnz5xMjQvj0vtLVm+w/uPz4y3NbWtvHCC1esXLnk1FO2P/VUuThtbTI9NXHZ29/e3dHR19fX07P41GWnDPYf2rix96EfbJ03r33F6as757VqpZ554rHOpuzoyPDo6OjM9MyVV799/PjxngXze3vXn7F65YqVp728Y/v2Z3duvnDL2eedMzY81FTITk2MLejuevG5p4727fec+mrahqCLiI2TySISYmQmTlhMghpVNQxXrj270NahFO5+/jkujQeF1tXnX7n2nI2D+3f98Ftfzvh5a4lQGRtpl9nGDnkCGMUJaQdIAVtrDSA1t7bf9Tu/98SDD01PTTe1tgPQjmefckzFgcSQUtoDRAtgGTWKx5ZRoXbiOAHA0BjXcRWCQlAEpZni5qtuuPDSS//mM58eHRkKXMdaBuW4aALFCMgN0xHQQNUkfMOGxXoEGUWBRk2czWbzGV9LMj02RBKzyLzuBQNH+nZs+5EHiQvWJYU28TSQDT2NCglAPNdBEbGJQ+I7QGJz2WBooG/X9mcWze/yHJWE1enR4byHGozvOhoEOPa1UmA8Ao31d2KJVqiRA0d5Shw0aGNfgasRXdq149mJkcGWrOeB9RU4mHhoSLjeUd8gA0sNZcH1TCSCICEJg2FmBYqUMEdxjIj55iZj7eTkpIgEQeC5rqt0HEdBECilK9WKMQkTeJ4XRZFWKl8oRFEYhqExFhEVUb5QGB0ds4bzhYJWqlKpFPL5aqns+342lymVZgCElI4SzmSz1UoFEAPfZ5PEYQ0AC01N1UolMQlqhUQAorUThmE+k3HFMksUJwD1pFtD5DwaKxdN9SwHoQEwaFetXVetRblcDgCSJAGAQj47MTEu5LS0NGdzOd/zfT8zePQoES1YsNAYMzo6MjkxfsopS2u1KhExs1JqZGQkm805ju7q6s5kgpGRkbGx0WXLls3MzGitldKJNUpRa2vLjh3b/cBFobZ8S2trqwAkccJsHdctlSsmSU5ZurRcLg8PDzflC0oRIjHb48dHA99raWrOZTO7X3werFHIAA1xD26gKHo2y0eYsG3r6iLPId/POJmmlpYkSYjI8/wkLE/PlHoWL5nf3R3HcWd396G+wcXLlsdxHFlmoAU9S8ViNtvU3NzGLMYkSqm2tk7X9YrFYj7fPDY2Pn/+QlKqFsZd8xeGtVotrHXMm48kk5MT4OgFixeb2BaC5iATRFHUOa+7VC5pzy+0YRLHpWpE2lu8bPn48EgQZJuamiYnJ844c325XNa+n8RhbMElQjYNkuhooHJhfYkgIyUsbjZYd3bv3r2vEegwDOMkJiREZBszm+7u7lqt5nseM4yOT5JSRBRHcZDJdHZ01KrlYrEUx7FSVH9NR33txrzOeURq4MiR5StOm5qamCkWXdcFEctCWgEIszHWaE2e40U1AyAtra2e6w0PD7l+xrIASK1aa25ubmlpOXTwYGfHPFJUrVY9z6tUqkJabCImcglIDAByY2SyGu8MBhIGx3ETE7MkIvWdsAICqEhAjDH1fh0RVlTfZUdKK7Ycm1g5pEhZa//lkFKpOEoAydFaTtSTgIEUInK9hyBJrNKBCAOAMUYphcKEKCBEiq1lEe06xpj6ZwqIQsWGSSlEApHGGRlusHowAkr9fVdg40iRaEUsMpsYQhC2AOAQ1fNvRBrqS2SFkYEAfEcLsrBVJ4qyP9tfJgIiYthzNLOAWJz1oYgIyCKzRV1yFIEwACCCdjQAnigiIAgjoQYUtprqSxFBRBBEaUSA+nZpns0PNkRhqXEAn5gHQREAUMD1Mv//29FZnq1CAc6mjkDqnv5Nx7q8pYIss/9K3uo6/vnI78/+KWr7s1VnPyvqn/gL+p8VfxuoZnhSveL9X3vK8ov4tF/sx/6nKTakSgGnSgGnauQzuHEDlRTwv1NQlCp10alSwCngVCngVCngVCngVCngVCngVCngVCngFHCqFHCqFHCqFHCqFHCqFHCqFHAKOFUKOFUKOFUKOFUKOFUKOFUKOFUKOAWcKgWcKgWcKgWcKgWcKgWcKgX8n0k6fQQnnd68eApTwCcf3Z8DnLrok91FI2L6FE4+C35jxV9qwWkUnWou6/8C/ZbHUE0IKGAAAAAASUVORK5CYII=" alt="شركة الأميرات الدولية">
@@ -236,45 +249,150 @@
   </div>
 </div>
 
+</div><!-- /advancesPage -->
+
+<div id="deliveryPage" style="display:none;">
+<header>
+  <div class="header-top">
+    <div class="eyebrow">مجمع الأميرات السكني 2 · مكتب التسليم الفني</div>
+  </div>
+  <h1>تسليم الدور</h1>
+  <p class="sub">متابعة الجاهزية وموعد التسليم لكل دار</p>
+  <div class="stats-row" id="deliveryStatsRow"></div>
+</header>
+
+<main>
+  <div id="readyReminders"></div>
+  <div id="deliveryAlerts"></div>
+
+  <div class="status-filter-row">
+    <button class="filter-chip active-filter" id="statusFilterAll">الكل</button>
+    <button class="filter-chip" id="statusFilterReady">جاهز</button>
+    <button class="filter-chip" id="statusFilterProgress">قيد العمل</button>
+    <button class="filter-chip" id="statusFilterNotReady">غير جاهز</button>
+  </div>
+
+  <div class="view-toggle">
+    <button class="tab-btn active" id="deliveryViewCards">🗂️ بطاقات</button>
+    <button class="tab-btn" id="deliveryViewTable">📋 جدول الهواتف</button>
+  </div>
+
+  <div style="text-align:left;margin-bottom:10px;">
+    <button class="filter-chip" id="editWaTemplateBtn">✎ تعديل رسالة الواتساب</button>
+  </div>
+
+  <div id="deliveryList"></div>
+</main>
+
+<button class="fab" id="fabAddUnit" aria-label="إضافة دار">+</button>
+
+<div class="overlay" id="unitOverlay">
+  <div class="sheet">
+    <h2 id="unitSheetTitle">إضافة دار جديدة</h2>
+    <div class="row2">
+      <div class="field">
+        <label>رقم الدار</label>
+        <input type="text" id="u_code" placeholder="مثال: B15.17">
+      </div>
+      <div class="field">
+        <label>المقاول</label>
+        <select id="u_contractor"></select>
+        <input type="text" id="u_contractor_other" placeholder="اكتب اسم المقاول" style="display:none;margin-top:6px;">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>القطاع</label>
+        <input type="text" id="u_sector" placeholder="مثال: الاول">
+      </div>
+      <div class="field">
+        <label>الجاهزية</label>
+        <select id="u_status">
+          <option value="جاهز">جاهز</option>
+          <option value="قيد العمل">قيد العمل</option>
+          <option value="غير جاهز">غير جاهز</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>تاريخ الكشف</label>
+        <input type="date" id="u_inspectionDate">
+      </div>
+      <div class="field">
+        <label>تاريخ التسليم</label>
+        <input type="date" id="u_deliveryDate">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>اسم المستفيد</label>
+        <input type="text" id="u_name" placeholder="اسم صاحب الدار">
+      </div>
+      <div class="field">
+        <label>رقم الهاتف</label>
+        <input type="text" inputmode="tel" id="u_phone" placeholder="07xxxxxxxxx">
+      </div>
+    </div>
+    <div class="field">
+      <label>ملاحظات</label>
+      <input type="text" id="u_notes" placeholder="أي ملاحظة إضافية (اختياري)">
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" id="unitCancelBtn">إلغاء</button>
+      <button class="btn btn-primary" id="unitSaveBtn">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="waTemplateOverlay">
+  <div class="sheet">
+    <h2>رسالة الواتساب الجاهزة</h2>
+    <p style="font-size:12px;color:var(--muted);margin:-6px 0 12px;">
+      استخدم {name} لاسم المستفيد، {unit} لرقم الدار، {date} لتاريخ التسليم، {msgnum} لرقم الرسالة — وراح ينحطون تلقائيًا بالرسالة.
+    </p>
+    <div class="field">
+      <textarea id="waTemplateText" rows="6" style="width:100%;padding:10px 12px;font-size:14px;font-family:'Tajawal',sans-serif;border:1px solid var(--paper-line);border-radius:10px;"></textarea>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" id="waTemplateCancelBtn">إلغاء</button>
+      <button class="btn btn-primary" id="waTemplateSaveBtn">حفظ</button>
+    </div>
+  </div>
+</div>
+</div><!-- /deliveryPage -->
+
 <div class="toast" id="toast"></div>
 
 <script>
-const CONTRACTORS = [
-  "عادل عرار","محمد عرار","جاسم زراق ق 4","جاسم زراك ق 5","ق 1+2","احمد عواد","اسعد هادي"
-];
-
+const CONTRACTORS = ["عادل عرار","محمد عرار","جاسم زراق ق 4","جاسم زراك ق 5","ق 1+2","احمد عواد","اسعد هادي"];
 const CREWS = [
-  {name:"محمد صادق حاكم", type:"ابواب خشب"},
-  {name:"سهيل سلمان عبد", type:"سقوف + محجر"},
-  {name:"عبد الامير مهدي", type:"كهرباء"},
-  {name:"لقمان شاه محمدي", type:"ابواب خشب"},
-  {name:"اياد حسن عبد", type:"حدادة"},
-  {name:"حسن زيدان عبد", type:"ماء ومجاري"},
-  {name:"علي حمود نعمه", type:"ابواب خشب"},
-  {name:"برهم جلال جوهر", type:"زجاج"},
-  {name:"نايف", type:"صبغ"},
-  {name:"خديدا قاسم فارس", type:"سقوف"}
+  {name:"محمد صادق حاكم", type:"ابواب خشب"},{name:"سهيل سلمان عبد", type:"سقوف + محجر"},
+  {name:"عبد الامير مهدي", type:"كهرباء"},{name:"لقمان شاه محمدي", type:"ابواب خشب"},
+  {name:"اياد حسن عبد", type:"حدادة"},{name:"حسن زيدان عبد", type:"ماء ومجاري"},
+  {name:"علي حمود نعمه", type:"ابواب خشب"},{name:"برهم جلال جوهر", type:"زجاج"},
+  {name:"نايف", type:"صبغ"},{name:"خديدا قاسم فارس", type:"سقوف"}
 ];
 
 let entries = [];
 let editingId = null;
 let viewMode = 'contractor';
-
 const $ = (id) => document.getElementById(id);
 
 function fillSelect(sel, options, valueFn, labelFn, includeOther){
   sel.innerHTML = options.map(o=>`<option value="${valueFn(o)}">${labelFn(o)}</option>`).join('')
     + (includeOther ? '<option value="__other__">أخرى (اكتب يدويًا)</option>' : '');
 }
-
 function initFormLists(){
   fillSelect($('f_contractor'), CONTRACTORS, c=>c, c=>c, true);
   fillSelect($('f_crew'), CREWS, c=>`${c.name}|${c.type}`, c=>`${c.name} - ${c.type}`, true);
+  fillSelect($('u_contractor'), CONTRACTORS, c=>c, c=>c, true);
 }
-
+$('u_contractor').addEventListener('change', ()=>{
+  $('u_contractor_other').style.display = $('u_contractor').value === '__other__' ? 'block' : 'none';
+});
 $('f_contractor').addEventListener('change', ()=>{
-  const isOther = $('f_contractor').value === '__other__';
-  $('f_contractor_other').style.display = isOther ? 'block' : 'none';
+  $('f_contractor_other').style.display = $('f_contractor').value === '__other__' ? 'block' : 'none';
 });
 $('f_crew').addEventListener('change', ()=>{
   const isOther = $('f_crew').value === '__other__';
@@ -284,55 +402,35 @@ $('f_crew').addEventListener('change', ()=>{
 
 function fmt(n){ n = Number(n)||0; return n.toLocaleString('en-US'); }
 function showToast(msg){
-  const t = $('toast');
-  t.textContent = msg;
-  t.classList.add('show');
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'), 1600);
 }
 
-let db = null;
-let entriesRef = null;
-
+let db = null, entriesRef = null;
 function initFirebase(){
   if(typeof firebaseConfig === 'undefined' || !firebaseConfig || !firebaseConfig.apiKey || firebaseConfig.apiKey.includes('ضع_')){
     $('connBadge').classList.add('offline');
     $('connText').textContent = 'ما تم إعداد Firebase بعد — شوف firebase-config.js';
-    showToast('لازم تعبي بيانات Firebase أول بملف firebase-config.js');
     return false;
   }
   firebase.initializeApp(firebaseConfig);
   db = firebase.firestore();
-  db.enablePersistence({synchronizeTabs:true}).catch(err=>{ console.warn('Persistence error:', err.code); });
+  db.enablePersistence({synchronizeTabs:true}).catch(err=>console.warn('Persistence error:', err.code));
   entriesRef = db.collection('contractor_entries');
   return true;
 }
-
 function watchConnection(){
-  window.addEventListener('online', ()=>{
-    $('connBadge').classList.remove('offline');
-    $('connText').textContent = 'متصل — يزامن تلقائيًا';
-  });
-  window.addEventListener('offline', ()=>{
-    $('connBadge').classList.add('offline');
-    $('connText').textContent = 'بدون نت — التغييرات محفوظة وراح تزامن لاحقًا';
-  });
-  if(!navigator.onLine){
-    $('connBadge').classList.add('offline');
-    $('connText').textContent = 'بدون نت — التغييرات محفوظة وراح تزامن لاحقًا';
-  }
+  window.addEventListener('online', ()=>{ $('connBadge').classList.remove('offline'); $('connText').textContent = 'متصل — يزامن تلقائيًا'; });
+  window.addEventListener('offline', ()=>{ $('connBadge').classList.add('offline'); $('connText').textContent = 'بدون نت — التغييرات محفوظة وراح تزامن لاحقًا'; });
+  if(!navigator.onLine){ $('connBadge').classList.add('offline'); $('connText').textContent = 'بدون نت — التغييرات محفوظة وراح تزامن لاحقًا'; }
 }
-
 function listenEntries(){
   if(!entriesRef) return;
   entriesRef.orderBy('createdAt', 'desc').onSnapshot(snapshot=>{
     entries = snapshot.docs.map(d=>({id:d.id, ...d.data()}));
     render();
-  }, err=>{
-    console.error(err);
-    showToast('صار خطأ بالمزامنة، تحقق من إعداد Firebase');
-  });
+  }, err=>{ console.error(err); showToast('صار خطأ بالمزامنة'); });
 }
-
 async function addEntry(data){ await entriesRef.add(data); }
 async function updateEntry(id, data){ await entriesRef.doc(id).update(data); }
 async function removeEntry(id){ await entriesRef.doc(id).delete(); }
@@ -346,108 +444,59 @@ function openSheet(entry){
   $('f_total').value = entry ? entry.total : '';
   $('f_paid').value = entry ? entry.paid : '';
   $('f_notes').value = entry ? (entry.notes||'') : '';
-
   const contractorVal = entry ? entry.contractor : '';
   if(entry && !CONTRACTORS.includes(contractorVal)){
-    $('f_contractor').value = '__other__';
-    $('f_contractor_other').style.display = 'block';
-    $('f_contractor_other').value = contractorVal;
+    $('f_contractor').value = '__other__'; $('f_contractor_other').style.display = 'block'; $('f_contractor_other').value = contractorVal;
   } else {
-    $('f_contractor').value = contractorVal || CONTRACTORS[0];
-    $('f_contractor_other').style.display = 'none';
-    $('f_contractor_other').value = '';
+    $('f_contractor').value = contractorVal || CONTRACTORS[0]; $('f_contractor_other').style.display = 'none'; $('f_contractor_other').value = '';
   }
-
   const crewName = entry ? (entry.crewName||'') : '';
   const crewType = entry ? (entry.crewType||'') : '';
   const match = CREWS.find(c=>c.name===crewName && c.type===crewType);
   if(entry && !match){
-    $('f_crew').value = '__other__';
-    $('f_crew_other_name').style.display = 'block';
-    $('f_crew_other_type').style.display = 'block';
-    $('f_crew_other_name').value = crewName;
-    $('f_crew_other_type').value = crewType;
+    $('f_crew').value = '__other__'; $('f_crew_other_name').style.display = 'block'; $('f_crew_other_type').style.display = 'block';
+    $('f_crew_other_name').value = crewName; $('f_crew_other_type').value = crewType;
   } else if(match){
-    $('f_crew').value = `${match.name}|${match.type}`;
-    $('f_crew_other_name').style.display = 'none';
-    $('f_crew_other_type').style.display = 'none';
-    $('f_crew_other_name').value = '';
-    $('f_crew_other_type').value = '';
+    $('f_crew').value = `${match.name}|${match.type}`; $('f_crew_other_name').style.display = 'none'; $('f_crew_other_type').style.display = 'none';
+    $('f_crew_other_name').value = ''; $('f_crew_other_type').value = '';
   } else {
-    $('f_crew').value = `${CREWS[0].name}|${CREWS[0].type}`;
-    $('f_crew_other_name').style.display = 'none';
-    $('f_crew_other_type').style.display = 'none';
+    $('f_crew').value = `${CREWS[0].name}|${CREWS[0].type}`; $('f_crew_other_name').style.display = 'none'; $('f_crew_other_type').style.display = 'none';
   }
-
   $('overlay').classList.add('show');
 }
 function closeSheet(){ $('overlay').classList.remove('show'); }
-
 $('fabAdd').onclick = () => openSheet(null);
 $('cancelBtn').onclick = closeSheet;
 $('overlay').onclick = (e) => { if(e.target.id==='overlay') closeSheet(); };
 
 $('saveBtn').onclick = async () => {
-  const month = $('f_month').value.trim();
-  const code = $('f_code').value.trim();
-  const item = $('f_item').value.trim();
-  const total = Number($('f_total').value)||0;
-  const paid = Number($('f_paid').value)||0;
-  const notes = $('f_notes').value.trim();
-
+  const month = $('f_month').value.trim(), code = $('f_code').value.trim(), item = $('f_item').value.trim();
+  const total = Number($('f_total').value)||0, paid = Number($('f_paid').value)||0, notes = $('f_notes').value.trim();
   let contractor = $('f_contractor').value;
   if(contractor === '__other__') contractor = $('f_contractor_other').value.trim();
-
   let crewName, crewType;
-  if($('f_crew').value === '__other__'){
-    crewName = $('f_crew_other_name').value.trim();
-    crewType = $('f_crew_other_type').value.trim();
-  } else {
-    [crewName, crewType] = $('f_crew').value.split('|');
-  }
-
-  if(!month || !contractor || !item || !crewName){
-    showToast('عبّي الشهر والمقاول والكادر وفقرة العمل');
-    return;
-  }
-
+  if($('f_crew').value === '__other__'){ crewName = $('f_crew_other_name').value.trim(); crewType = $('f_crew_other_type').value.trim(); }
+  else { [crewName, crewType] = $('f_crew').value.split('|'); }
+  if(!month || !contractor || !item || !crewName){ showToast('عبّي الشهر والمقاول والكادر وفقرة العمل'); return; }
   try{
-    if(editingId){
-      await updateEntry(editingId, {month, contractor, code, crewName, crewType, item, total, paid, notes});
-    } else {
-      await addEntry({month, contractor, code, crewName, crewType, item, total, paid, notes, createdAt: Date.now()});
-    }
+    if(editingId){ await updateEntry(editingId, {month, contractor, code, crewName, crewType, item, total, paid, notes}); }
+    else { await addEntry({month, contractor, code, crewName, crewType, item, total, paid, notes, createdAt: Date.now()}); }
     closeSheet();
     showToast(navigator.onLine ? 'تم الحفظ' : 'تم الحفظ محليًا — راح يزامن أول ما يرجع النت');
-  }catch(e){
-    console.error(e);
-    showToast('صار خطأ بالحفظ');
-  }
+  }catch(e){ console.error(e); showToast('صار خطأ بالحفظ'); }
 };
-
 async function deleteEntry(id){
   if(!confirm('حذف هذه الحركة؟')) return;
-  try{
-    await removeEntry(id);
-    showToast('تم الحذف');
-  }catch(e){
-    showToast('صار خطأ بالحذف');
-  }
+  try{ await removeEntry(id); showToast('تم الحذف'); }catch(e){ showToast('صار خطأ بالحذف'); }
 }
-
 function toggleCard(el){ el.classList.toggle('open'); }
-
 function unitLabel(e){ return e.code && e.code.trim() ? e.code.trim() : 'بدون رمز'; }
 function crewLabel(e){ return `${e.crewName}${e.crewType ? ' - '+e.crewType : ''}`; }
 
-let selectedMonths = new Set();
-let selectedContractors = new Set();
-let tempMultiSelect = new Set();
-let multiSelectType = null;
+let selectedMonths = new Set(), selectedContractors = new Set(), tempMultiSelect = new Set(), multiSelectType = null;
 
 function populateFilters(){
   const crews = [...new Set(entries.map(e=>crewLabel(e)))].sort();
-
   const kf = $('crewFilter'); const currentK = kf.value;
   kf.innerHTML = '<option value="">كل الكوادر</option>' + crews.map(k=>`<option value="${k}">${k}</option>`).join('');
   kf.value = crews.includes(currentK) ? currentK : '';
@@ -458,9 +507,7 @@ function populateFilters(){
   monthsForUnits.forEach(m=>{
     const unitsInMonth = [...new Set(entries.filter(e=>e.month===m).map(e=>unitLabel(e)))].sort();
     if(unitsInMonth.length===0) return;
-    unitOptionsHtml += `<optgroup label="${m}">` +
-      unitsInMonth.map(u=>`<option value="${m}||${u}">${u}</option>`).join('') +
-      `</optgroup>`;
+    unitOptionsHtml += `<optgroup label="${m}">` + unitsInMonth.map(u=>`<option value="${m}||${u}">${u}</option>`).join('') + `</optgroup>`;
   });
   uf.innerHTML = unitOptionsHtml;
   uf.value = [...uf.options].some(o=>o.value===currentU) ? currentU : '';
@@ -469,66 +516,39 @@ function populateFilters(){
   const allContractors = new Set(entries.map(e=>e.contractor));
   selectedMonths = new Set([...selectedMonths].filter(m=>allMonths.has(m)));
   selectedContractors = new Set([...selectedContractors].filter(c=>allContractors.has(c)));
-
   updateFilterChipLabel('monthFilterBtn', selectedMonths, 'كل الأشهر');
   updateFilterChipLabel('contractorFilterBtn', selectedContractors, 'كل المقاولين');
 }
-
 function updateFilterChipLabel(btnId, set, allLabel){
   const btn = $(btnId);
-  if(set.size===0){
-    btn.textContent = allLabel;
-    btn.classList.remove('active-filter');
-  } else if(set.size===1){
-    btn.textContent = [...set][0];
-    btn.classList.add('active-filter');
-  } else {
-    btn.textContent = `${set.size} مختارة ✓`;
-    btn.classList.add('active-filter');
-  }
+  if(set.size===0){ btn.textContent = allLabel; btn.classList.remove('active-filter'); }
+  else if(set.size===1){ btn.textContent = [...set][0]; btn.classList.add('active-filter'); }
+  else { btn.textContent = `${set.size} مختارة ✓`; btn.classList.add('active-filter'); }
 }
-
 function openMultiSelect(type){
   multiSelectType = type;
   let values, current, title;
-  if(type==='month'){
-    values = [...new Set(entries.map(e=>e.month))].sort();
-    current = selectedMonths;
-    title = 'اختر شهر أو أكثر';
-  } else {
-    values = [...new Set(entries.map(e=>e.contractor))].sort();
-    current = selectedContractors;
-    title = 'اختر مقاول أو أكثر';
-  }
+  if(type==='month'){ values = [...new Set(entries.map(e=>e.month))].sort(); current = selectedMonths; title = 'اختر شهر أو أكثر'; }
+  else { values = [...new Set(entries.map(e=>e.contractor))].sort(); current = selectedContractors; title = 'اختر مقاول أو أكثر'; }
   tempMultiSelect = new Set(current);
   $('multiSelectTitle').textContent = title;
   $('multiSelectList').innerHTML = values.map((v,i)=>`
-    <label class="multi-select-row">
-      <input type="checkbox" data-val="${i}" ${current.has(v) ? 'checked':''}>
-      <span>${v}</span>
-    </label>
+    <label class="multi-select-row"><input type="checkbox" data-val="${i}" ${current.has(v) ? 'checked':''}><span>${v}</span></label>
   `).join('') || '<div style="padding:16px;color:var(--muted);text-align:center;">ما فيه بيانات بعد</div>';
   [...$('multiSelectList').querySelectorAll('input[type=checkbox]')].forEach((cb, i)=>{
-    cb.addEventListener('change', ()=>{
-      if(cb.checked) tempMultiSelect.add(values[i]);
-      else tempMultiSelect.delete(values[i]);
-    });
+    cb.addEventListener('change', ()=>{ if(cb.checked) tempMultiSelect.add(values[i]); else tempMultiSelect.delete(values[i]); });
   });
   $('multiSelectOverlay').classList.add('show');
 }
 function closeMultiSelect(){ $('multiSelectOverlay').classList.remove('show'); }
-
 $('monthFilterBtn').onclick = () => openMultiSelect('month');
 $('contractorFilterBtn').onclick = () => openMultiSelect('contractor');
 $('multiSelectClearBtn').onclick = () => { tempMultiSelect = new Set(); openMultiSelect(multiSelectType); };
 $('multiSelectApplyBtn').onclick = () => {
-  if(multiSelectType==='month') selectedMonths = new Set(tempMultiSelect);
-  else selectedContractors = new Set(tempMultiSelect);
-  closeMultiSelect();
-  render();
+  if(multiSelectType==='month') selectedMonths = new Set(tempMultiSelect); else selectedContractors = new Set(tempMultiSelect);
+  closeMultiSelect(); render();
 };
 $('multiSelectOverlay').onclick = (e) => { if(e.target.id==='multiSelectOverlay') closeMultiSelect(); };
-
 $('crewFilter').onchange = render;
 $('unitFilter').onchange = render;
 
@@ -547,10 +567,7 @@ function getFilteredEntries(){
   const kVal = $('crewFilter').value;
   const uVal = $('unitFilter').value;
   let uMonth = '', uUnit = '';
-  if(uVal){
-    const parts = uVal.split('||');
-    uMonth = parts[0]; uUnit = parts[1];
-  }
+  if(uVal){ const parts = uVal.split('||'); uMonth = parts[0]; uUnit = parts[1]; }
   return entries.filter(e =>
     (selectedMonths.size===0 || selectedMonths.has(e.month)) &&
     (selectedContractors.size===0 || selectedContractors.has(e.contractor)) &&
@@ -558,34 +575,18 @@ function getFilteredEntries(){
     (!uVal || (e.month===uMonth && unitLabel(e)===uUnit))
   );
 }
-
 function openDebtsBreakdown(){
   const filtered = getFilteredEntries();
   const byCrew = {};
-  filtered.forEach(e=>{
-    const remain = e.total - e.paid;
-    if(remain<=0) return;
-    const key = crewLabel(e);
-    byCrew[key] = (byCrew[key]||0) + remain;
-  });
+  filtered.forEach(e=>{ const remain = e.total - e.paid; if(remain<=0) return; const key = crewLabel(e); byCrew[key] = (byCrew[key]||0) + remain; });
   const rows = Object.entries(byCrew).sort((a,b)=>b[1]-a[1]);
   const grandTotal = rows.reduce((s,r)=>s+r[1],0);
-
   const list = $('debtsList');
-  if(rows.length===0){
-    list.innerHTML = '<div style="padding:16px;color:var(--muted);text-align:center;">ما فيه مبالغ متبقية بهذا الفلتر</div>';
-  } else {
+  if(rows.length===0){ list.innerHTML = '<div style="padding:16px;color:var(--muted);text-align:center;">ما فيه مبالغ متبقية بهذا الفلتر</div>'; }
+  else {
     list.innerHTML = rows.map(([name, amt])=>`
-      <div class="debt-line">
-        <span class="name">${name} يطلب</span>
-        <span class="amt">${fmt(amt)}</span>
-      </div>
-    `).join('') + `
-      <div class="debt-total">
-        <span>المجموع</span>
-        <span class="amt">${fmt(grandTotal)}</span>
-      </div>
-    `;
+      <div class="debt-line"><span class="name">${name} يطلب</span><span class="amt">${fmt(amt)}</span></div>
+    `).join('') + `<div class="debt-total"><span>المجموع</span><span class="amt">${fmt(grandTotal)}</span></div>`;
   }
   $('debtsOverlay').classList.add('show');
 }
@@ -595,124 +596,303 @@ $('debtsOverlay').onclick = (e) => { if(e.target.id==='debtsOverlay') $('debtsOv
 function render(){
   populateFilters();
   const filtered = getFilteredEntries();
-
-  const totalAll = filtered.reduce((s,e)=>s+e.total,0);
-  const paidAll = filtered.reduce((s,e)=>s+e.paid,0);
-  const remainAll = totalAll - paidAll;
+  const totalAll = filtered.reduce((s,e)=>s+e.total,0), paidAll = filtered.reduce((s,e)=>s+e.paid,0), remainAll = totalAll - paidAll;
   const contractorsCount = new Set(filtered.map(e=>e.contractor)).size;
-
   $('statsRow').innerHTML = `
     <div class="stat-chip"><div class="n">${contractorsCount}</div><div class="l">مقاولين</div></div>
     <div class="stat-chip"><div class="n">${fmt(totalAll)}</div><div class="l">إجمالي المبلغ</div></div>
     <div class="stat-chip"><div class="n">${fmt(paidAll)}</div><div class="l">الواصل</div></div>
-    <div class="stat-chip clickable" id="remainChip"><div class="n">${fmt(remainAll)}</div><div class="l">المتبقي (اضغط للتفصيل)</div></div>
-  `;
+    <div class="stat-chip clickable" id="remainChip"><div class="n">${fmt(remainAll)}</div><div class="l">المتبقي (اضغط للتفصيل)</div></div>`;
   $('remainChip').onclick = openDebtsBreakdown;
 
   const list = $('list');
   if(filtered.length===0){
-    list.innerHTML = `
-      <div class="empty">
-        <div class="icon">📋</div>
-        <b>ما فيه حركات مسجلة</b>
-        اضغط زر (+) لتسجيل أول فقرة عمل
-      </div>`;
+    list.innerHTML = `<div class="empty"><div class="icon">📋</div><b>ما فيه حركات مسجلة</b>اضغط زر (+) لتسجيل أول فقرة عمل</div>`;
     return;
   }
-
   let groupKeyFn, metaLabelFn;
-  if(viewMode === 'crew'){
-    groupKeyFn = e=>crewLabel(e);
-    metaLabelFn = (rows)=>`يعمل عند: ${[...new Set(rows.map(r=>r.contractor))].join('، ')}`;
-  } else if(viewMode === 'unit'){
+  if(viewMode === 'crew'){ groupKeyFn = e=>crewLabel(e); metaLabelFn = (rows)=>`يعمل عند: ${[...new Set(rows.map(r=>r.contractor))].join('، ')}`; }
+  else if(viewMode === 'unit'){
     groupKeyFn = e=>unitLabel(e);
-    metaLabelFn = (rows)=>{
-      const c = [...new Set(rows.map(r=>r.contractor))].join('، ');
-      const k = [...new Set(rows.map(r=>crewLabel(r)))].join('، ');
-      return `المقاول: ${c} · الكادر: ${k}`;
-    };
-  } else {
-    groupKeyFn = e=>e.contractor;
-    metaLabelFn = null;
-  }
+    metaLabelFn = (rows)=>{ const c = [...new Set(rows.map(r=>r.contractor))].join('، '); const k = [...new Set(rows.map(r=>crewLabel(r)))].join('، '); return `المقاول: ${c} · الكادر: ${k}`; };
+  } else { groupKeyFn = e=>e.contractor; metaLabelFn = null; }
 
   const groups = {};
-  filtered.forEach(e=>{
-    const key = groupKeyFn(e);
-    if(!groups[key]) groups[key]=[];
-    groups[key].push(e);
-  });
+  filtered.forEach(e=>{ const key = groupKeyFn(e); if(!groups[key]) groups[key]=[]; groups[key].push(e); });
 
   list.innerHTML = Object.keys(groups).sort().map(name=>{
     const rows = groups[name];
-    const total = rows.reduce((s,e)=>s+e.total,0);
-    const paid = rows.reduce((s,e)=>s+e.paid,0);
-    const remain = total - paid;
+    const total = rows.reduce((s,e)=>s+e.total,0), paid = rows.reduce((s,e)=>s+e.paid,0), remain = total - paid;
     const pct = total>0 ? Math.min(100, Math.round((paid/total)*100)) : 0;
-    const subMeta = metaLabelFn
-      ? `${rows.length} فقرة · ${metaLabelFn(rows)} · متبقي ${fmt(remain)}`
-      : `${rows.length} فقرة · متبقي ${fmt(remain)}`;
-
+    const subMeta = metaLabelFn ? `${rows.length} فقرة · ${metaLabelFn(rows)} · متبقي ${fmt(remain)}` : `${rows.length} فقرة · متبقي ${fmt(remain)}`;
     const entriesHtml = rows.map(e=>`
       <div class="entry">
         <div class="entry-left">
-          <div>
-            <span class="work-item" style="display:inline;font-weight:600;">${e.item}</span>
-            ${(viewMode!=='unit' && e.code) ? `<span class="code-tag">${e.code}</span>`:''}
-          </div>
+          <div><span class="work-item" style="display:inline;font-weight:600;">${e.item}</span>${(viewMode!=='unit' && e.code) ? `<span class="code-tag">${e.code}</span>`:''}</div>
           <div class="entry-tags">${e.month} · ${viewMode==='crew' ? e.contractor : (viewMode==='unit' ? `${e.contractor} · ${crewLabel(e)}` : crewLabel(e))}</div>
           ${e.notes ? `<div class="entry-notes">📝 ${e.notes}</div>` : ''}
-          <div class="entry-actions">
-            <button class="icon-btn" onclick="editEntry('${e.id}')">✎ تعديل</button>
-            <button class="icon-btn" onclick="deleteEntry('${e.id}')">🗑 حذف</button>
-          </div>
+          <div class="entry-actions"><button class="icon-btn" onclick="editEntry('${e.id}')">✎ تعديل</button><button class="icon-btn" onclick="deleteEntry('${e.id}')">🗑 حذف</button></div>
         </div>
-        <div class="entry-amounts">
-          <div class="amt-total">${fmt(e.total)}</div>
-          <div class="amt-paid">واصل ${fmt(e.paid)}</div>
-          <div class="amt-remain">متبقي ${fmt(e.total-e.paid)}</div>
-        </div>
-      </div>
-    `).join('');
-
+        <div class="entry-amounts"><div class="amt-total">${fmt(e.total)}</div><div class="amt-paid">واصل ${fmt(e.paid)}</div><div class="amt-remain">متبقي ${fmt(e.total-e.paid)}</div></div>
+      </div>`).join('');
     return `
       <div class="contractor-card">
         <div class="contractor-head" onclick="toggleCard(this.parentElement)">
-          <div>
-            <div class="contractor-name">${name}</div>
-            <div class="contractor-meta">${subMeta}</div>
-          </div>
+          <div><div class="contractor-name">${name}</div><div class="contractor-meta">${subMeta}</div></div>
           <div class="chevron">▾</div>
         </div>
         <div class="ruler"><div class="ruler-fill" style="width:${pct}%"></div></div>
         <div class="ruler-row"><span>واصل ${fmt(paid)}</span><span>من أصل ${fmt(total)}</span></div>
         <div class="entries">${entriesHtml}</div>
-      </div>
-    `;
+      </div>`;
   }).join('');
 }
+function editEntry(id){ const e = entries.find(x=>x.id===id); if(e) openSheet(e); }
+window.editEntry = editEntry; window.deleteEntry = deleteEntry; window.toggleCard = toggleCard;
 
-function editEntry(id){
-  const e = entries.find(x=>x.id===id);
-  if(e) openSheet(e);
+// ===== صفحة تسليم الدور =====
+let units = [], unitsRef = null, editingUnitId = null, statusFilter = '';
+const DEFAULT_WA_TEMPLATE = 'مرحبًا {name}،\nدار {unit} جاهزة للتسليم (تذكير رقم {msgnum} من 3).\nيرجى التواصل معنا لتنسيق موعد الاستلام.\nمكتب التسليم الفني - مجمع الأميرات السكني 2';
+let waTemplate = DEFAULT_WA_TEMPLATE, deliveryViewMode = 'cards';
+
+$('deliveryViewCards').onclick = () => { deliveryViewMode = 'cards'; $('deliveryViewCards').classList.add('active'); $('deliveryViewTable').classList.remove('active'); renderDelivery(); };
+$('deliveryViewTable').onclick = () => { deliveryViewMode = 'table'; $('deliveryViewTable').classList.add('active'); $('deliveryViewCards').classList.remove('active'); renderDelivery(); };
+
+$('navAdvances').onclick = () => { $('navAdvances').classList.add('active'); $('navDelivery').classList.remove('active'); $('advancesPage').style.display = 'block'; $('deliveryPage').style.display = 'none'; };
+$('navDelivery').onclick = () => { $('navDelivery').classList.add('active'); $('navAdvances').classList.remove('active'); $('deliveryPage').style.display = 'block'; $('advancesPage').style.display = 'none'; };
+
+function initDeliveryFirestore(){
+  if(!db) return;
+  unitsRef = db.collection('delivery_units');
+  unitsRef.onSnapshot(snapshot=>{ units = snapshot.docs.map(d=>({id:d.id, ...d.data()})); renderDelivery(); }, err=>{ console.error(err); showToast('صار خطأ بمزامنة بيانات التسليم'); });
+  db.collection('settings').doc('whatsapp').onSnapshot(doc=>{ if(doc.exists && doc.data().template){ waTemplate = doc.data().template; } });
 }
-window.editEntry = editEntry;
-window.deleteEntry = deleteEntry;
-window.toggleCard = toggleCard;
+
+function openUnitSheet(unit){
+  editingUnitId = unit ? unit.id : null;
+  $('unitSheetTitle').textContent = unit ? 'تعديل بيانات الدار' : 'إضافة دار جديدة';
+  $('u_code').value = unit ? unit.code : '';
+  $('u_sector').value = unit ? (unit.sector||'') : '';
+  $('u_status').value = unit ? unit.status : 'قيد العمل';
+  $('u_inspectionDate').value = unit ? (unit.inspectionDate||'') : '';
+  $('u_deliveryDate').value = unit ? (unit.deliveryDate||'') : '';
+  $('u_name').value = unit ? (unit.beneficiaryName||'') : '';
+  $('u_phone').value = unit ? (unit.phone||'') : '';
+  $('u_notes').value = unit ? (unit.notes||'') : '';
+  const contractorVal = unit ? (unit.contractor||'') : '';
+  if(unit && contractorVal && !CONTRACTORS.includes(contractorVal)){
+    $('u_contractor').value = '__other__'; $('u_contractor_other').style.display = 'block'; $('u_contractor_other').value = contractorVal;
+  } else {
+    $('u_contractor').value = contractorVal || CONTRACTORS[0]; $('u_contractor_other').style.display = 'none'; $('u_contractor_other').value = '';
+  }
+  $('unitOverlay').classList.add('show');
+}
+function closeUnitSheet(){ $('unitOverlay').classList.remove('show'); }
+$('fabAddUnit').onclick = () => openUnitSheet(null);
+$('unitCancelBtn').onclick = closeUnitSheet;
+$('unitOverlay').onclick = (e) => { if(e.target.id==='unitOverlay') closeUnitSheet(); };
+
+$('unitSaveBtn').onclick = async () => {
+  const code = $('u_code').value.trim(), sector = $('u_sector').value.trim(), status = $('u_status').value;
+  const inspectionDate = $('u_inspectionDate').value, deliveryDate = $('u_deliveryDate').value;
+  const beneficiaryName = $('u_name').value.trim(), phone = $('u_phone').value.trim(), notes = $('u_notes').value.trim();
+  let contractor = $('u_contractor').value;
+  if(contractor === '__other__') contractor = $('u_contractor_other').value.trim();
+  if(!code){ showToast('لازم تكتب رقم الدار'); return; }
+  if(!unitsRef){ showToast('ما تم الاتصال بقاعدة البيانات بعد'); return; }
+  const existing = editingUnitId ? units.find(x=>x.id===editingUnitId) : null;
+  let readyReminderCount = existing ? (existing.readyReminderCount||0) : 0;
+  let lastReminderDate = existing ? (existing.lastReminderDate||null) : null;
+  if(status !== 'جاهز'){ readyReminderCount = 0; lastReminderDate = null; }
+  try{
+    const data = {code, sector, contractor, status, inspectionDate, deliveryDate, beneficiaryName, phone, notes, readyReminderCount, lastReminderDate};
+    if(editingUnitId){ await unitsRef.doc(editingUnitId).update(data); }
+    else { await unitsRef.add({...data, createdAt: Date.now()}); }
+    closeUnitSheet();
+    showToast('تم الحفظ');
+  }catch(e){ console.error(e); showToast('صار خطأ بالحفظ'); }
+};
+async function deleteUnit(id){
+  if(!confirm('حذف هذه الدار من النظام؟ (استخدمها لو استلمت من المستفيد)')) return;
+  try{ await unitsRef.doc(id).delete(); showToast('تم الحذف'); }catch(e){ showToast('صار خطأ بالحذف'); }
+}
+function editUnit(id){ const u = units.find(x=>x.id===id); if(u) openUnitSheet(u); }
+window.deleteUnit = deleteUnit; window.editUnit = editUnit;
+
+function setStatusFilter(val, btnId){
+  statusFilter = val;
+  [...document.querySelectorAll('.status-filter-row .filter-chip')].forEach(b=>b.classList.remove('active-filter'));
+  $(btnId).classList.add('active-filter');
+  renderDelivery();
+}
+$('statusFilterAll').onclick = () => setStatusFilter('', 'statusFilterAll');
+$('statusFilterReady').onclick = () => setStatusFilter('جاهز', 'statusFilterReady');
+$('statusFilterProgress').onclick = () => setStatusFilter('قيد العمل', 'statusFilterProgress');
+$('statusFilterNotReady').onclick = () => setStatusFilter('غير جاهز', 'statusFilterNotReady');
+
+$('editWaTemplateBtn').onclick = () => { $('waTemplateText').value = waTemplate; $('waTemplateOverlay').classList.add('show'); };
+$('waTemplateCancelBtn').onclick = () => $('waTemplateOverlay').classList.remove('show');
+$('waTemplateOverlay').onclick = (e) => { if(e.target.id==='waTemplateOverlay') $('waTemplateOverlay').classList.remove('show'); };
+$('waTemplateSaveBtn').onclick = async () => {
+  const txt = $('waTemplateText').value.trim() || DEFAULT_WA_TEMPLATE;
+  waTemplate = txt;
+  try{ if(db) await db.collection('settings').doc('whatsapp').set({template: txt}); showToast('تم حفظ الرسالة'); }
+  catch(e){ showToast('صار خطأ بالحفظ'); }
+  $('waTemplateOverlay').classList.remove('show');
+};
+
+function buildWaLink(unit, msgNum){
+  const dateLabel = unit.deliveryDate ? formatDateArabic(unit.deliveryDate) : '—';
+  const msg = waTemplate.replace(/{name}/g, unit.beneficiaryName || 'عزيزي المستفيد').replace(/{unit}/g, unit.code || '').replace(/{date}/g, dateLabel).replace(/{msgnum}/g, msgNum || '1');
+  let phone = (unit.phone||'').replace(/[^\d]/g, '');
+  if(phone.startsWith('0')) phone = '964' + phone.slice(1); else if(!phone.startsWith('964')) phone = '964' + phone;
+  return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+}
+function sendWhatsapp(id){
+  const u = units.find(x=>x.id===id); if(!u) return;
+  if(!u.phone){ showToast('ما فيه رقم هاتف مسجل لهذي الدار'); return; }
+  window.open(buildWaLink(u), '_blank');
+}
+window.sendWhatsapp = sendWhatsapp;
+
+function getReminderInfo(unit){
+  if(unit.status !== 'جاهز') return null;
+  const count = unit.readyReminderCount || 0;
+  if(count >= 3) return null;
+  if(count === 0) return {due:true, msgNum:1};
+  const last = unit.lastReminderDate;
+  if(!last) return {due:true, msgNum:count+1};
+  const daysSince = -daysDiffFromToday(last);
+  if(daysSince >= 10) return {due:true, msgNum:count+1};
+  return {due:false, msgNum:count+1, daysRemaining: 10 - daysSince};
+}
+async function sendReadyReminder(id){
+  const u = units.find(x=>x.id===id); if(!u) return;
+  if(!u.phone){ showToast('ما فيه رقم هاتف مسجل لهذي الدار'); return; }
+  const info = getReminderInfo(u);
+  const msgNum = info ? info.msgNum : ((u.readyReminderCount||0)+1);
+  window.open(buildWaLink(u, msgNum), '_blank');
+  try{
+    await unitsRef.doc(id).update({ readyReminderCount: (u.readyReminderCount||0)+1, lastReminderDate: new Date().toISOString().slice(0,10) });
+    showToast(`تم تسجيل إرسال الرسالة ${msgNum} من 3`);
+  }catch(e){ console.error(e); }
+}
+window.sendReadyReminder = sendReadyReminder;
+
+function daysDiffFromToday(dateStr){
+  if(!dateStr) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(dateStr); d.setHours(0,0,0,0);
+  return Math.round((d - today) / 86400000);
+}
+function formatDateArabic(dateStr){ if(!dateStr) return ''; const d = new Date(dateStr); return d.toLocaleDateString('ar-EG', {year:'numeric', month:'long', day:'numeric'}); }
+function dueTag(diff){
+  if(diff===null) return '';
+  if(diff<0) return `<span class="unit-due-tag overdue">متأخرة ${Math.abs(diff)} يوم</span>`;
+  if(diff===0) return `<span class="unit-due-tag today">موعدها اليوم</span>`;
+  if(diff<=7) return `<span class="unit-due-tag soon">بعد ${diff} يوم</span>`;
+  return '';
+}
+function statusBadgeClass(status){ if(status==='جاهز') return 'status-ready'; if(status==='قيد العمل') return 'status-inprogress'; return 'status-notready'; }
+
+function renderDelivery(){
+  const total = units.length, readyCount = units.filter(u=>u.status==='جاهز').length;
+  const overdueCount = units.filter(u=>daysDiffFromToday(u.deliveryDate)<0).length;
+  const todayCount = units.filter(u=>daysDiffFromToday(u.deliveryDate)===0).length;
+  $('deliveryStatsRow').innerHTML = `
+    <div class="stat-chip"><div class="n">${total}</div><div class="l">إجمالي الدور</div></div>
+    <div class="stat-chip"><div class="n">${readyCount}</div><div class="l">جاهزة</div></div>
+    <div class="stat-chip"><div class="n">${todayCount}</div><div class="l">موعدها اليوم</div></div>
+    <div class="stat-chip"><div class="n">${overdueCount}</div><div class="l">متأخرة</div></div>`;
+
+  const reminderUnits = units.map(u=>({u, info:getReminderInfo(u)})).filter(x=>x.info && x.info.due);
+  if(reminderUnits.length>0){
+    $('readyReminders').innerHTML = `
+      <div class="reminder-banner">
+        <div class="alert-banner-title">🔔 دور جاهزة تحتاج رسالة تذكير (${reminderUnits.length})</div>
+        ${reminderUnits.map(({u, info})=>`
+          <div class="alert-row">
+            <span>${u.code} — ${u.beneficiaryName||'بدون اسم'} (رسالة ${info.msgNum} من 3)</span>
+            ${u.phone ? `<button class="wa-mini" onclick="sendReadyReminder('${u.id}')">إرسال</button>` : '<span style="font-size:11px;color:var(--muted);">ما فيه رقم</span>'}
+          </div>`).join('')}
+      </div>`;
+  } else { $('readyReminders').innerHTML = ''; }
+
+  const alertUnits = units.filter(u=>{ const diff = daysDiffFromToday(u.deliveryDate); return diff !== null && diff <= 0; }).sort((a,b)=>daysDiffFromToday(a.deliveryDate)-daysDiffFromToday(b.deliveryDate));
+  if(alertUnits.length>0){
+    $('deliveryAlerts').innerHTML = `
+      <div class="alert-banner danger">
+        <div class="alert-banner-title">⚠️ دور وصلت أو تجاوزت موعد التسليم (${alertUnits.length})</div>
+        ${alertUnits.map(u=>{
+          const diff = daysDiffFromToday(u.deliveryDate);
+          const label = diff===0 ? 'اليوم' : `متأخرة ${Math.abs(diff)} يوم`;
+          return `<div class="alert-row"><span>${u.code} — ${u.beneficiaryName||'بدون اسم'} (${label})</span>${u.phone ? `<button class="wa-mini" onclick="sendWhatsapp('${u.id}')">واتساب</button>` : ''}</div>`;
+        }).join('')}
+      </div>`;
+  } else { $('deliveryAlerts').innerHTML = ''; }
+
+  let filtered = statusFilter ? units.filter(u=>u.status===statusFilter) : units;
+  filtered = [...filtered].sort((a,b)=>{
+    const da = a.deliveryDate ? new Date(a.deliveryDate).getTime() : Infinity;
+    const db_ = b.deliveryDate ? new Date(b.deliveryDate).getTime() : Infinity;
+    return da - db_;
+  });
+
+  const list = $('deliveryList');
+  if(filtered.length===0){
+    list.innerHTML = `<div class="empty"><div class="icon">🔑</div><b>ما فيه دور مسجلة</b>اضغط زر (+) لإضافة أول دار</div>`;
+    return;
+  }
+
+  if(deliveryViewMode === 'table'){
+    list.innerHTML = `
+      <table class="phone-table">
+        <thead><tr><th>رقم الدار</th><th>القطاع</th><th>المقاول</th><th>الحالة</th><th>اسم المستفيد</th><th>رقم الهاتف</th></tr></thead>
+        <tbody>
+          ${filtered.map(u=>`
+            <tr>
+              <td class="phone-code-cell">${u.code}</td><td>${u.sector||'—'}</td><td>${u.contractor||'—'}</td><td>${u.status}</td><td>${u.beneficiaryName||'—'}</td>
+              <td><input type="tel" value="${u.phone||''}" placeholder="07xxxxxxxxx" data-id="${u.id}" onchange="savePhoneInline(this)"></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(u=>{
+    const diff = daysDiffFromToday(u.deliveryDate);
+    const cardClass = diff!==null && diff<0 ? 'overdue' : (diff===0 ? 'today' : '');
+    return `
+      <div class="unit-card ${cardClass}">
+        <div class="unit-card-top"><span class="unit-code-big">${u.code}</span><span class="status-badge ${statusBadgeClass(u.status)}">${u.status}</span></div>
+        <div class="unit-dates">${u.sector ? `<span>القطاع: ${u.sector}</span>` : ''}${u.contractor ? `<span>المقاول: ${u.contractor}</span>` : ''}</div>
+        <div class="unit-dates">
+          <span>تاريخ الكشف: ${u.inspectionDate ? formatDateArabic(u.inspectionDate) : '—'}</span>
+          <span>تاريخ التسليم: ${u.deliveryDate ? formatDateArabic(u.deliveryDate) : '—'}</span>
+          ${dueTag(diff)}
+        </div>
+        ${u.beneficiaryName ? `<div class="unit-beneficiary">👤 ${u.beneficiaryName}</div>` : ''}
+        ${u.phone ? `<div class="unit-phone">📞 ${u.phone}</div>` : ''}
+        ${u.notes ? `<div class="entry-notes">📝 ${u.notes}</div>` : ''}
+        <div class="unit-actions">
+          ${u.phone ? `<button class="btn-mini wa" onclick="sendWhatsapp('${u.id}')">واتساب</button>` : ''}
+          <button class="btn-mini edit" onclick="editUnit('${u.id}')">✎ تعديل</button>
+          <button class="btn-mini del" onclick="deleteUnit('${u.id}')">🗑 حذف</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+async function savePhoneInline(inputEl){
+  const id = inputEl.dataset.id, phone = inputEl.value.trim();
+  try{ await unitsRef.doc(id).update({phone}); inputEl.classList.add('saved'); showToast('تم حفظ رقم الهاتف'); }
+  catch(e){ console.error(e); showToast('صار خطأ بالحفظ'); }
+}
+window.savePhoneInline = savePhoneInline;
 
 initFormLists();
 watchConnection();
-if(initFirebase()){
-  listenEntries();
-} else {
-  render();
-}
-
-if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
-  });
-}
+if(initFirebase()){ listenEntries(); initDeliveryFirestore(); } else { render(); }
+if('serviceWorker' in navigator){ window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }); }
 </script>
 </body>
 </html>
