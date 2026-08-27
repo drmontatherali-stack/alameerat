@@ -754,7 +754,11 @@
     <button class="filter-chip" id="statusFilterReady">🟢 جاهز</button>
     <button class="filter-chip" id="statusFilterProgress">🟠 قيد العمل</button>
     <button class="filter-chip" id="statusFilterNotReady">🔴 غير جاهز</button>
-    <button class="filter-chip" id="unitContractorFilterBtn">كل المقاولين</button>
+  </div>
+ 
+  <div class="filters" id="unitDropdownFilters">
+    <select id="unitContractorFilter"><option value="">كل المقاولين</option></select>
+    <select id="unitSectorFilter"><option value="">كل القطاعات</option></select>
   </div>
  
   <div class="view-toggle">
@@ -1172,22 +1176,12 @@ function closeMultiSelect(){ $('multiSelectOverlay').classList.remove('show'); }
  
 $('monthFilterBtn').onclick = () => openMultiSelect('month');
 $('contractorFilterBtn').onclick = () => openMultiSelect('contractor');
-$('multiSelectClearBtn').onclick = () => {
-  if(multiSelectType==='unitContractor'){
-    tempUnitContractorSelect = new Set();
-    [...$('multiSelectList').querySelectorAll('input[type=checkbox]')].forEach(cb=>cb.checked=false);
-  } else {
-    tempMultiSelect = new Set();
-    openMultiSelect(multiSelectType);
-  }
-};
+$('multiSelectClearBtn').onclick = () => { tempMultiSelect = new Set(); openMultiSelect(multiSelectType); };
 $('multiSelectApplyBtn').onclick = () => {
   if(multiSelectType==='month') selectedMonths = new Set(tempMultiSelect);
-  else if(multiSelectType==='contractor') selectedContractors = new Set(tempMultiSelect);
-  else if(multiSelectType==='unitContractor') selectedUnitContractors = new Set(tempUnitContractorSelect);
+  else selectedContractors = new Set(tempMultiSelect);
   closeMultiSelect();
-  if(multiSelectType==='unitContractor') renderDelivery();
-  else render();
+  render();
 };
 $('multiSelectOverlay').onclick = (e) => { if(e.target.id==='multiSelectOverlay') closeMultiSelect(); };
  
@@ -1373,8 +1367,6 @@ let unitsRef = null;
 let editingUnitId = null;
 let statusFilter = '';
 let deliveryTab = 'active'; // 'active' | 'delivered'
-let selectedUnitContractors = new Set();
-let tempUnitContractorSelect = new Set();
 const DEFAULT_WA_TEMPLATE = 'مرحبًا {name}،\nدار {unit} جاهزة للتسليم (تذكير رقم {msgnum} من 3).\nيرجى التواصل معنا لتنسيق موعد الاستلام.\nمكتب التسليم الفني - مجمع الأميرات السكني 2';
 let waTemplate = DEFAULT_WA_TEMPLATE;
 let deliveryViewMode = 'cards'; // 'cards' | 'table'
@@ -1392,19 +1384,19 @@ $('deliveryTabDelivered').onclick = () => {
   renderDelivery();
 };
  
-$('unitContractorFilterBtn').onclick = () => {
-  const values = [...new Set(units.map(u=>u.contractor).filter(Boolean))].sort();
-  tempUnitContractorSelect = new Set(selectedUnitContractors);
-  $('multiSelectTitle').textContent = 'اختر مقاول أو أكثر';
-  $('multiSelectList').innerHTML = values.map((v,i)=>`
-    <label class="multi-select-row"><input type="checkbox" data-val="${i}" ${selectedUnitContractors.has(v)?'checked':''}><span>${v}</span></label>
-  `).join('') || '<div style="padding:16px;color:var(--muted);text-align:center;">ما فيه بيانات بعد</div>';
-  [...$('multiSelectList').querySelectorAll('input[type=checkbox]')].forEach((cb,i)=>{
-    cb.addEventListener('change', ()=>{ if(cb.checked) tempUnitContractorSelect.add(values[i]); else tempUnitContractorSelect.delete(values[i]); });
-  });
-  multiSelectType = 'unitContractor';
-  $('multiSelectOverlay').classList.add('show');
-};
+function populateUnitDropdownFilters(){
+  const contractors = [...new Set(units.map(u=>u.contractor).filter(Boolean))].sort();
+  const cf = $('unitContractorFilter'); const currentC = cf.value;
+  cf.innerHTML = '<option value="">كل المقاولين</option>' + contractors.map(c=>`<option value="${c}">${c}</option>`).join('');
+  cf.value = contractors.includes(currentC) ? currentC : '';
+ 
+  const sectors = [...new Set(units.map(u=>u.sector && u.sector.trim() ? u.sector.trim() : '').filter(Boolean))].sort();
+  const sf = $('unitSectorFilter'); const currentS = sf.value;
+  sf.innerHTML = '<option value="">كل القطاعات</option>' + sectors.map(s=>`<option value="${s}">${s}</option>`).join('');
+  sf.value = sectors.includes(currentS) ? currentS : '';
+}
+$('unitContractorFilter').onchange = renderDelivery;
+$('unitSectorFilter').onchange = renderDelivery;
  
 $('deliveryViewCards').onclick = () => {
   deliveryViewMode = 'cards';
@@ -1686,7 +1678,7 @@ function statusBadgeClass(status){
 }
  
 function renderDelivery(){
-  updateFilterChipLabel('unitContractorFilterBtn', selectedUnitContractors, 'كل المقاولين');
+  populateUnitDropdownFilters();
  
   const activeUnits = units.filter(u=>!u.delivered);
   const deliveredUnits = units.filter(u=>u.delivered);
@@ -1749,6 +1741,7 @@ function renderDelivery(){
   // إظهار/إخفاء عناصر التحكم الخاصة بالدور النشطة فقط
   const isActiveTab = deliveryTab === 'active';
   document.querySelector('.status-filter-row').style.display = isActiveTab ? 'flex' : 'none';
+  $('unitDropdownFilters').style.display = isActiveTab ? 'flex' : 'none';
  
   // ===== قائمة الدور المسلمة =====
   const list = $('deliveryList');
@@ -1793,7 +1786,10 @@ function renderDelivery(){
   // ===== الدور النشطة =====
   let filtered = activeUnits;
   if(statusFilter) filtered = filtered.filter(u=>u.status===statusFilter);
-  if(selectedUnitContractors.size>0) filtered = filtered.filter(u=>selectedUnitContractors.has(u.contractor));
+  const contractorVal = $('unitContractorFilter').value;
+  if(contractorVal) filtered = filtered.filter(u=>u.contractor===contractorVal);
+  const sectorVal = $('unitSectorFilter').value;
+  if(sectorVal) filtered = filtered.filter(u=>(u.sector && u.sector.trim() ? u.sector.trim() : '')===sectorVal);
  
   if(filtered.length===0){
     list.innerHTML = `
