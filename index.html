@@ -1917,7 +1917,17 @@ function renderDelivery(){
   document.querySelector('.status-filter-row').style.display = isActiveTab ? 'flex' : 'none';
   $('unitDropdownFilters').style.display = isActiveTab ? 'flex' : 'none';
  
-  // ===== قائمة الدور المسلمة =====
+  // ---- ربط الدار المسلمة بسجلات سلف المقاولين (الكادر والأسعار) ----
+function getMaintenanceInfo(unitCode){
+  if(!unitCode || !unitCode.trim()) return null;
+  const matches = entries.filter(e => unitLabel(e) === unitCode.trim());
+  if(matches.length===0) return null;
+  const total = matches.reduce((s,e)=>s + (Number(e.total)||0), 0);
+  const crews = [...new Set(matches.map(e=>crewLabel(e)))];
+  return {total, crews, count: matches.length};
+}
+ 
+// ===== قائمة الدور المسلمة =====
   const list = $('deliveryList');
   if(deliveryTab === 'delivered'){
     let delivFiltered = [...deliveredUnits].sort((a,b)=>{
@@ -1934,7 +1944,9 @@ function renderDelivery(){
         </div>`;
       return;
     }
-    list.innerHTML = delivFiltered.map((u,i)=>`
+    list.innerHTML = delivFiltered.map((u,i)=>{
+      const maint = getMaintenanceInfo(u.code);
+      return `
       <div class="unit-card" style="border-right:4px solid #2E9E5B;">
         <div class="unit-card-top">
           <span class="unit-code-big"><span class="unit-seq">#${i+1}</span>${u.code}</span>
@@ -1946,13 +1958,15 @@ function renderDelivery(){
           <span>تاريخ الاستلام: ${u.deliveredDate ? formatDateArabic(u.deliveredDate) : '—'}</span>
         </div>
         ${u.phone ? `<div class="unit-phone">📞 ${u.phone}</div>` : ''}
+        ${maint ? `<div class="entry-notes">🛠️ تم إجراء صيانة لهذه الدار بسعر ${fmt(maint.total)} استنادًا إلى الكادر المشتغلة بيها (${maint.crews.join('، ')}) وأسعارهم الموجودة ضمن سلف المقاولين.</div>` : ''}
         <div class="unit-actions">
           <button class="btn-mini edit" onclick="markUndelivered('${u.id}')">↩️ إلغاء الاستلام</button>
           <button class="btn-mini edit" onclick="editUnit('${u.id}')">✎ تعديل</button>
           <button class="btn-mini del" onclick="deleteUnit('${u.id}')">🗑 حذف</button>
         </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
     return;
   }
  
