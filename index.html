@@ -419,6 +419,33 @@
   .reminder-banner .alert-banner-title{color:#2A5C9A;}
   .reminder-banner .wa-mini{background:#25D366;}
  
+  .item-card{
+    background:var(--card);
+    border-radius:var(--radius);
+    margin-bottom:12px;
+    box-shadow:0 2px 10px rgba(22,35,59,.06);
+    border:1px solid #E4E9EF;
+    padding:14px 16px;
+  }
+  .item-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+  .item-name{font-family:'Cairo',sans-serif;font-weight:700;font-size:15px;color:var(--navy);}
+  .item-qty-row{display:flex;gap:16px;align-items:baseline;margin:8px 0;flex-wrap:wrap;}
+  .item-qty-big{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:var(--navy);}
+  .item-qty-label{font-size:10.5px;color:var(--muted);}
+  .item-ref{font-size:11.5px;color:var(--muted);}
+  .diff-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;}
+  .diff-up{background:#E4F5EC;color:#1E7A45;}
+  .diff-down{background:#FDE3E1;color:#B7472A;}
+  .diff-flat{background:#F1F4F8;color:var(--muted);}
+  .item-status{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;}
+  .item-status.ok{background:#E7F0FB;color:#2A5C9A;}
+  .item-status.under{background:#FDE3E1;color:#B7472A;}
+  .item-status.over{background:#FFEBD6;color:#B25E00;}
+  .item-last-date{font-size:11px;color:var(--muted);margin-top:4px;}
+  .history-row{display:flex;justify-content:space-between;padding:8px 4px;border-bottom:1px solid #EEF1F5;font-size:13px;}
+  .history-row:last-child{border-bottom:none;}
+  .history-row .hq{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--navy);}
+ 
   .view-toggle{
     display:flex;
     gap:8px;
@@ -625,6 +652,7 @@
 <div class="page-nav">
   <button class="page-nav-btn active" id="navAdvances">💰 سلف المقاولين</button>
   <button class="page-nav-btn" id="navDelivery">🔑 تسليم الدور</button>
+  <button class="page-nav-btn" id="navInventory">📦 المخزن</button>
 </div>
  
 <div id="advancesPage">
@@ -757,8 +785,8 @@
   </div>
  
   <div class="filters" id="unitDropdownFilters">
-    <select id="unitContractorFilter"><option value="">كل المقاولين</option></select>
-    <select id="unitSectorFilter"><option value="">كل القطاعات</option></select>
+    <button class="filter-chip" id="unitContractorFilterBtn">كل المقاولين</button>
+    <button class="filter-chip" id="unitSectorFilterBtn">كل القطاعات</button>
   </div>
  
   <div class="view-toggle">
@@ -813,15 +841,9 @@
         <input type="date" id="u_deliveryDate">
       </div>
     </div>
-    <div class="row2">
-      <div class="field">
-        <label>اسم المستفيد</label>
-        <input type="text" id="u_name" placeholder="اسم صاحب الدار">
-      </div>
-      <div class="field">
-        <label>رقم الهاتف</label>
-        <input type="text" inputmode="tel" id="u_phone" placeholder="07xxxxxxxxx">
-      </div>
+    <div class="field">
+      <label>رقم الهاتف</label>
+      <input type="text" inputmode="tel" id="u_phone" placeholder="07xxxxxxxxx">
     </div>
     <div class="field">
       <label>ملاحظات</label>
@@ -841,11 +863,28 @@
   </div>
 </div>
  
+<div class="overlay" id="quickDeliveredOverlay">
+  <div class="sheet">
+    <h2>إضافة دار مسلمة</h2>
+    <p style="font-size:12px;color:var(--muted);margin:-6px 0 12px;">
+      رقم الدار بس — تنضاف مباشرة لقائمة "الدور المسلمة" بدون أي تفاصيل ثانية.
+    </p>
+    <div class="field">
+      <label>رقم البلوك والدار</label>
+      <input type="text" id="qd_code" placeholder="مثال: B15.17">
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" id="quickDeliveredCancelBtn">إلغاء</button>
+      <button class="btn btn-primary" id="quickDeliveredSaveBtn">حفظ</button>
+    </div>
+  </div>
+</div>
+ 
 <div class="overlay" id="waTemplateOverlay">
   <div class="sheet">
     <h2>رسالة الواتساب الجاهزة</h2>
     <p style="font-size:12px;color:var(--muted);margin:-6px 0 12px;">
-      استخدم {name} لاسم المستفيد، {unit} لرقم الدار، {date} لتاريخ التسليم — وراح ينحطون تلقائيًا بالرسالة.
+      استخدم {unit} لرقم الدار، {date} لتاريخ التسليم، {msgnum} لرقم الرسالة — وراح ينحطون تلقائيًا بالرسالة.
     </p>
     <div class="field">
       <textarea id="waTemplateText" rows="6" style="width:100%;padding:10px 12px;font-size:14px;font-family:'Tajawal',sans-serif;border:1px solid var(--paper-line);border-radius:10px;"></textarea>
@@ -858,6 +897,73 @@
 </div>
 </div><!-- /deliveryPage -->
  
+<div id="inventoryPage" style="display:none;">
+<header>
+  <div class="header-top">
+    <div class="eyebrow">مجمع الأميرات السكني 2 · مكتب التسليم الفني</div>
+  </div>
+  <h1>المخزن</h1>
+  <p class="sub">جرد المواد الأسبوعي، الزائد والناقص</p>
+  <div class="stats-row" id="inventoryStatsRow"></div>
+</header>
+ 
+<main>
+  <div id="inventoryAlerts"></div>
+ 
+  <div style="display:flex;gap:8px;margin-bottom:14px;">
+    <button class="btn btn-primary" id="openWeeklyCountBtn" style="flex:1;">🗓️ تسجيل جرد جديد</button>
+  </div>
+ 
+  <div id="inventoryList"></div>
+</main>
+ 
+<button class="fab" id="fabAddItem" aria-label="إضافة مادة">+</button>
+ 
+<div class="overlay" id="itemOverlay">
+  <div class="sheet">
+    <h2 id="itemSheetTitle">إضافة مادة جديدة</h2>
+    <div class="field">
+      <label>اسم المادة</label>
+      <input type="text" id="it_name" placeholder="مثال: اسمنت">
+    </div>
+    <div class="field">
+      <label>الحد الأدنى المطلوب (الكمية المرجعية)</label>
+      <input type="text" inputmode="numeric" id="it_ref" placeholder="0">
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" id="itemCancelBtn">إلغاء</button>
+      <button class="btn btn-primary" id="itemSaveBtn">حفظ</button>
+    </div>
+  </div>
+</div>
+ 
+<div class="overlay" id="weeklyCountOverlay">
+  <div class="sheet">
+    <h2>تسجيل جرد جديد</h2>
+    <div class="field">
+      <label>تاريخ الجرد</label>
+      <input type="date" id="wc_date">
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin:-4px 0 10px;">اكتب الكمية الحالية لكل مادة (اترك فاضي لو ما تريد تسجل لها هالمرة).</p>
+    <div id="weeklyCountList" class="multi-select-list"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" id="weeklyCountCancelBtn">إلغاء</button>
+      <button class="btn btn-primary" id="weeklyCountSaveBtn">حفظ الجرد</button>
+    </div>
+  </div>
+</div>
+ 
+<div class="overlay" id="historyOverlay">
+  <div class="sheet">
+    <h2 id="historyTitle">سجل الجرد</h2>
+    <div id="historyList"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-primary" id="historyCloseBtn">إغلاق</button>
+    </div>
+  </div>
+</div>
+</div><!-- /inventoryPage -->
+ 
 <div class="toast" id="toast"></div>
  
 <script>
@@ -869,7 +975,12 @@ const CONTRACTORS = [
   "جاسم زراك ق 5",
   "ق 1+2",
   "احمد عواد",
-  "اسعد هادي"
+  "اسعد هادي",
+  "علي هويدي",
+  "عمر بولات",
+  "يوسف حسن",
+  "علي الكوفي",
+  "اسعد هادي ق 3"
 ];
  
 const CREWS = [
@@ -1176,12 +1287,23 @@ function closeMultiSelect(){ $('multiSelectOverlay').classList.remove('show'); }
  
 $('monthFilterBtn').onclick = () => openMultiSelect('month');
 $('contractorFilterBtn').onclick = () => openMultiSelect('contractor');
-$('multiSelectClearBtn').onclick = () => { tempMultiSelect = new Set(); openMultiSelect(multiSelectType); };
+$('multiSelectClearBtn').onclick = () => {
+  if(multiSelectType==='unitContractor' || multiSelectType==='unitSector'){
+    tempUnitFilterSelect = new Set();
+    openUnitFilterSelect(multiSelectType);
+  } else {
+    tempMultiSelect = new Set();
+    openMultiSelect(multiSelectType);
+  }
+};
 $('multiSelectApplyBtn').onclick = () => {
   if(multiSelectType==='month') selectedMonths = new Set(tempMultiSelect);
-  else selectedContractors = new Set(tempMultiSelect);
+  else if(multiSelectType==='contractor') selectedContractors = new Set(tempMultiSelect);
+  else if(multiSelectType==='unitContractor') selectedUnitContractors = new Set(tempUnitFilterSelect);
+  else if(multiSelectType==='unitSector') selectedUnitSectors = new Set(tempUnitFilterSelect);
   closeMultiSelect();
-  render();
+  if(multiSelectType==='unitContractor' || multiSelectType==='unitSector') renderDelivery();
+  else render();
 };
 $('multiSelectOverlay').onclick = (e) => { if(e.target.id==='multiSelectOverlay') closeMultiSelect(); };
  
@@ -1367,7 +1489,7 @@ let unitsRef = null;
 let editingUnitId = null;
 let statusFilter = '';
 let deliveryTab = 'active'; // 'active' | 'delivered'
-const DEFAULT_WA_TEMPLATE = 'مرحبًا {name}،\nدار {unit} جاهزة للتسليم (تذكير رقم {msgnum} من 3).\nيرجى التواصل معنا لتنسيق موعد الاستلام.\nمكتب التسليم الفني - مجمع الأميرات السكني 2';
+const DEFAULT_WA_TEMPLATE = 'مرحبًا،\nدار {unit} جاهزة للتسليم (تذكير رقم {msgnum} من 3).\nيرجى التواصل معنا لتنسيق موعد الاستلام.\nمكتب التسليم الفني - مجمع الأميرات السكني 2';
 let waTemplate = DEFAULT_WA_TEMPLATE;
 let deliveryViewMode = 'cards'; // 'cards' | 'table'
  
@@ -1384,19 +1506,46 @@ $('deliveryTabDelivered').onclick = () => {
   renderDelivery();
 };
  
-function populateUnitDropdownFilters(){
-  const contractors = [...new Set(units.map(u=>u.contractor).filter(Boolean))].sort();
-  const cf = $('unitContractorFilter'); const currentC = cf.value;
-  cf.innerHTML = '<option value="">كل المقاولين</option>' + contractors.map(c=>`<option value="${c}">${c}</option>`).join('');
-  cf.value = contractors.includes(currentC) ? currentC : '';
+let selectedUnitContractors = new Set();
+let selectedUnitSectors = new Set();
+let tempUnitFilterSelect = new Set();
  
-  const sectors = [...new Set(units.map(u=>u.sector && u.sector.trim() ? u.sector.trim() : '').filter(Boolean))].sort();
-  const sf = $('unitSectorFilter'); const currentS = sf.value;
-  sf.innerHTML = '<option value="">كل القطاعات</option>' + sectors.map(s=>`<option value="${s}">${s}</option>`).join('');
-  sf.value = sectors.includes(currentS) ? currentS : '';
+function populateUnitDropdownFilters(){
+  const allContractors = new Set(units.map(u=>u.contractor).filter(Boolean));
+  const allSectors = new Set(units.map(u=>u.sector && u.sector.trim() ? u.sector.trim() : '').filter(Boolean));
+  selectedUnitContractors = new Set([...selectedUnitContractors].filter(c=>allContractors.has(c)));
+  selectedUnitSectors = new Set([...selectedUnitSectors].filter(s=>allSectors.has(s)));
+  updateFilterChipLabel('unitContractorFilterBtn', selectedUnitContractors, 'كل المقاولين');
+  updateFilterChipLabel('unitSectorFilterBtn', selectedUnitSectors, 'كل القطاعات');
 }
-$('unitContractorFilter').onchange = renderDelivery;
-$('unitSectorFilter').onchange = renderDelivery;
+ 
+function openUnitFilterSelect(type){
+  multiSelectType = type;
+  let values, current, title;
+  if(type==='unitContractor'){
+    values = [...new Set(units.map(u=>u.contractor).filter(Boolean))].sort();
+    current = selectedUnitContractors;
+    title = 'اختر مقاول أو أكثر';
+  } else {
+    values = [...new Set(units.map(u=>u.sector && u.sector.trim() ? u.sector.trim() : '').filter(Boolean))].sort();
+    current = selectedUnitSectors;
+    title = 'اختر قطاع أو أكثر';
+  }
+  tempUnitFilterSelect = new Set(current);
+  $('multiSelectTitle').textContent = title;
+  $('multiSelectList').innerHTML = values.map((v,i)=>`
+    <label class="multi-select-row"><input type="checkbox" data-val="${i}" ${current.has(v) ? 'checked':''}><span>${v}</span></label>
+  `).join('') || '<div style="padding:16px;color:var(--muted);text-align:center;">ما فيه بيانات بعد</div>';
+  [...$('multiSelectList').querySelectorAll('input[type=checkbox]')].forEach((cb, i)=>{
+    cb.addEventListener('change', ()=>{
+      if(cb.checked) tempUnitFilterSelect.add(values[i]);
+      else tempUnitFilterSelect.delete(values[i]);
+    });
+  });
+  $('multiSelectOverlay').classList.add('show');
+}
+$('unitContractorFilterBtn').onclick = () => openUnitFilterSelect('unitContractor');
+$('unitSectorFilterBtn').onclick = () => openUnitFilterSelect('unitSector');
  
 $('deliveryViewCards').onclick = () => {
   deliveryViewMode = 'cards';
@@ -1412,18 +1561,17 @@ $('deliveryViewTable').onclick = () => {
 };
  
 // ---- التنقل بين الصفحتين ----
-$('navAdvances').onclick = () => {
-  $('navAdvances').classList.add('active');
-  $('navDelivery').classList.remove('active');
-  $('advancesPage').style.display = 'block';
-  $('deliveryPage').style.display = 'none';
-};
-$('navDelivery').onclick = () => {
-  $('navDelivery').classList.add('active');
-  $('navAdvances').classList.remove('active');
-  $('deliveryPage').style.display = 'block';
-  $('advancesPage').style.display = 'none';
-};
+function showPage(page){
+  $('navAdvances').classList.toggle('active', page==='advances');
+  $('navDelivery').classList.toggle('active', page==='delivery');
+  $('navInventory').classList.toggle('active', page==='inventory');
+  $('advancesPage').style.display = page==='advances' ? 'block' : 'none';
+  $('deliveryPage').style.display = page==='delivery' ? 'block' : 'none';
+  $('inventoryPage').style.display = page==='inventory' ? 'block' : 'none';
+}
+$('navAdvances').onclick = () => showPage('advances');
+$('navDelivery').onclick = () => showPage('delivery');
+$('navInventory').onclick = () => showPage('inventory');
  
 // ---- Firestore لصفحة التسليم ----
 function initDeliveryFirestore(){
@@ -1453,7 +1601,6 @@ function openUnitSheet(unit){
   $('u_status').value = unit ? unit.status : 'قيد العمل';
   $('u_inspectionDate').value = unit ? (unit.inspectionDate||'') : '';
   $('u_deliveryDate').value = unit ? (unit.deliveryDate||'') : '';
-  $('u_name').value = unit ? (unit.beneficiaryName||'') : '';
   $('u_phone').value = unit ? (unit.phone||'') : '';
   $('u_notes').value = unit ? (unit.notes||'') : '';
   $('u_delivered_check').checked = unit ? !!unit.delivered : false;
@@ -1475,7 +1622,35 @@ function openUnitSheet(unit){
 }
 function closeUnitSheet(){ $('unitOverlay').classList.remove('show'); }
  
-$('fabAddUnit').onclick = () => openUnitSheet(null);
+$('fabAddUnit').onclick = () => {
+  if(deliveryTab === 'delivered'){
+    $('qd_code').value = '';
+    $('quickDeliveredOverlay').classList.add('show');
+  } else {
+    openUnitSheet(null);
+  }
+};
+$('quickDeliveredCancelBtn').onclick = () => $('quickDeliveredOverlay').classList.remove('show');
+$('quickDeliveredOverlay').onclick = (e) => { if(e.target.id==='quickDeliveredOverlay') $('quickDeliveredOverlay').classList.remove('show'); };
+$('quickDeliveredSaveBtn').onclick = async () => {
+  const code = $('qd_code').value.trim();
+  if(!code){ showToast('لازم تكتب رقم الدار'); return; }
+  if(!unitsRef){ showToast('ما تم الاتصال بقاعدة البيانات بعد'); return; }
+  try{
+    await unitsRef.add({
+      code, sector:'', contractor:'', status:'جاهز',
+      inspectionDate:'', deliveryDate:'', phone:'', notes:'',
+      readyReminderCount:0, lastReminderDate:null,
+      delivered:true, deliveredDate: new Date().toISOString().slice(0,10),
+      createdAt: Date.now()
+    });
+    $('quickDeliveredOverlay').classList.remove('show');
+    showToast('تمت الإضافة لقائمة المسلمة');
+  }catch(e){
+    console.error(e);
+    showToast('صار خطأ بالحفظ');
+  }
+};
 $('unitCancelBtn').onclick = closeUnitSheet;
 $('unitOverlay').onclick = (e) => { if(e.target.id==='unitOverlay') closeUnitSheet(); };
 $('u_delivered_check').addEventListener('change', ()=>{
@@ -1488,7 +1663,6 @@ $('unitSaveBtn').onclick = async () => {
   const status = $('u_status').value;
   const inspectionDate = $('u_inspectionDate').value;
   const deliveryDate = $('u_deliveryDate').value;
-  const beneficiaryName = $('u_name').value.trim();
   const phone = $('u_phone').value.trim();
   const notes = $('u_notes').value.trim();
  
@@ -1517,7 +1691,7 @@ $('unitSaveBtn').onclick = async () => {
   const deliveredDate = delivered ? ($('u_deliveredDate').value || new Date().toISOString().slice(0,10)) : null;
  
   try{
-    const data = {code, sector, contractor, status, inspectionDate, deliveryDate, beneficiaryName, phone, notes, readyReminderCount, lastReminderDate, delivered, deliveredDate};
+    const data = {code, sector, contractor, status, inspectionDate, deliveryDate, phone, notes, readyReminderCount, lastReminderDate, delivered, deliveredDate};
     if(editingUnitId){
       await unitsRef.doc(editingUnitId).update(data);
     } else {
@@ -1601,7 +1775,7 @@ $('waTemplateSaveBtn').onclick = async () => {
 function buildWaLink(unit, msgNum){
   const dateLabel = unit.deliveryDate ? formatDateArabic(unit.deliveryDate) : '—';
   const msg = waTemplate
-    .replace(/{name}/g, unit.beneficiaryName || 'عزيزي المستفيد')
+    .replace(/{name}/g, 'عزيزي المستفيد')
     .replace(/{unit}/g, unit.code || '')
     .replace(/{date}/g, dateLabel)
     .replace(/{msgnum}/g, msgNum || '1');
@@ -1662,7 +1836,7 @@ function daysDiffFromToday(dateStr){
 function formatDateArabic(dateStr){
   if(!dateStr) return '';
   const d = new Date(dateStr);
-  return d.toLocaleDateString('ar-EG', {year:'numeric', month:'long', day:'numeric'});
+  return `${d.getDate()}-${d.getMonth()+1}-${d.getFullYear()}`;
 }
 function dueTag(diff){
   if(diff===null) return '';
@@ -1703,7 +1877,7 @@ function renderDelivery(){
         <div class="alert-banner-title">🔔 دور جاهزة تحتاج رسالة تذكير (${reminderUnits.length})</div>
         ${reminderUnits.map(({u, info})=>`
           <div class="alert-row">
-            <span>${u.code} — ${u.beneficiaryName||'بدون اسم'} (رسالة ${info.msgNum} من 3)</span>
+            <span>${u.code} (رسالة ${info.msgNum} من 3)</span>
             ${u.phone ? `<button class="wa-mini" onclick="sendReadyReminder('${u.id}')">إرسال</button>` : '<span style="font-size:11px;color:var(--muted);">ما فيه رقم</span>'}
           </div>
         `).join('')}
@@ -1728,7 +1902,7 @@ function renderDelivery(){
           const label = diff===0 ? 'اليوم' : `متأخرة ${Math.abs(diff)} يوم`;
           return `
             <div class="alert-row">
-              <span>${u.code} — ${u.beneficiaryName||'بدون اسم'} (${label})</span>
+              <span>${u.code} (${label})</span>
               ${u.phone ? `<button class="wa-mini" onclick="sendWhatsapp('${u.id}')">واتساب</button>` : ''}
             </div>`;
         }).join('')}
@@ -1771,7 +1945,6 @@ function renderDelivery(){
           ${u.contractor ? `<span>المقاول: ${u.contractor}</span>` : ''}
           <span>تاريخ الاستلام: ${u.deliveredDate ? formatDateArabic(u.deliveredDate) : '—'}</span>
         </div>
-        ${u.beneficiaryName ? `<div class="unit-beneficiary">👤 ${u.beneficiaryName}</div>` : ''}
         ${u.phone ? `<div class="unit-phone">📞 ${u.phone}</div>` : ''}
         <div class="unit-actions">
           <button class="btn-mini edit" onclick="markUndelivered('${u.id}')">↩️ إلغاء الاستلام</button>
@@ -1786,10 +1959,8 @@ function renderDelivery(){
   // ===== الدور النشطة =====
   let filtered = activeUnits;
   if(statusFilter) filtered = filtered.filter(u=>u.status===statusFilter);
-  const contractorVal = $('unitContractorFilter').value;
-  if(contractorVal) filtered = filtered.filter(u=>u.contractor===contractorVal);
-  const sectorVal = $('unitSectorFilter').value;
-  if(sectorVal) filtered = filtered.filter(u=>(u.sector && u.sector.trim() ? u.sector.trim() : '')===sectorVal);
+  if(selectedUnitContractors.size>0) filtered = filtered.filter(u=>selectedUnitContractors.has(u.contractor));
+  if(selectedUnitSectors.size>0) filtered = filtered.filter(u=>selectedUnitSectors.has(u.sector && u.sector.trim() ? u.sector.trim() : ''));
  
   if(filtered.length===0){
     list.innerHTML = `
@@ -1812,7 +1983,7 @@ function renderDelivery(){
       <table class="phone-table">
         <thead>
           <tr>
-            <th>#</th><th>رقم الدار</th><th>القطاع</th><th>المقاول</th><th>الحالة</th><th>اسم المستفيد</th><th>رقم الهاتف</th>
+            <th>#</th><th>رقم الدار</th><th>القطاع</th><th>المقاول</th><th>الحالة</th><th>رقم الهاتف</th>
           </tr>
         </thead>
         <tbody>
@@ -1823,7 +1994,6 @@ function renderDelivery(){
               <td>${u.sector||'—'}</td>
               <td>${u.contractor||'—'}</td>
               <td>${u.status}</td>
-              <td>${u.beneficiaryName||'—'}</td>
               <td><input type="tel" value="${u.phone||''}" placeholder="07xxxxxxxxx" data-id="${u.id}" onchange="savePhoneInline(this)"></td>
             </tr>
           `).join('')}
@@ -1872,8 +2042,7 @@ function renderDelivery(){
               <span>تاريخ التسليم: ${u.deliveryDate ? formatDateArabic(u.deliveryDate) : '—'}</span>
               ${dueTag(diff)}
             </div>
-            ${u.beneficiaryName ? `<div class="unit-beneficiary">👤 ${u.beneficiaryName}</div>` : ''}
-            ${u.phone ? `<div class="unit-phone">📞 ${u.phone}</div>` : ''}
+                ${u.phone ? `<div class="unit-phone">📞 ${u.phone}</div>` : ''}
             ${u.notes ? `<div class="entry-notes">📝 ${u.notes}</div>` : ''}
             <div class="unit-actions">
               <button class="btn-mini wa" style="background:#2E9E5B;" onclick="markDelivered('${u.id}')">✓ تم الاستلام</button>
@@ -1904,11 +2073,220 @@ async function savePhoneInline(inputEl){
 }
 window.savePhoneInline = savePhoneInline;
  
+// ============================================================
+// ===== صفحة المخزن =====
+// ============================================================
+let items = [];       // {id, name, refQty, createdAt}
+let counts = [];      // {id, itemId, itemName, quantity, date, createdAt}
+let itemsRef = null, countsRef = null;
+let editingItemId = null;
+ 
+function initInventoryFirestore(){
+  if(!db) return;
+  itemsRef = db.collection('inventory_items');
+  countsRef = db.collection('inventory_counts');
+  itemsRef.onSnapshot(snapshot=>{
+    items = snapshot.docs.map(d=>({id:d.id, ...d.data()}));
+    renderInventory();
+  }, err=>{ console.error(err); showToast('صار خطأ بمزامنة المخزن'); });
+  countsRef.onSnapshot(snapshot=>{
+    counts = snapshot.docs.map(d=>({id:d.id, ...d.data()}));
+    renderInventory();
+  }, err=>{ console.error(err); });
+}
+ 
+function countsForItem(itemId){
+  return counts.filter(c=>c.itemId===itemId).sort((a,b)=> new Date(b.date) - new Date(a.date) || (b.createdAt-a.createdAt));
+}
+function latestCount(itemId){ const c = countsForItem(itemId); return c.length ? c[0] : null; }
+function previousCount(itemId){ const c = countsForItem(itemId); return c.length>1 ? c[1] : null; }
+ 
+// ---- فورم إضافة/تعديل مادة ----
+function openItemSheet(item){
+  editingItemId = item ? item.id : null;
+  $('itemSheetTitle').textContent = item ? 'تعديل بيانات المادة' : 'إضافة مادة جديدة';
+  $('it_name').value = item ? item.name : '';
+  $('it_ref').value = item ? item.refQty : '';
+  $('itemOverlay').classList.add('show');
+}
+$('fabAddItem').onclick = () => openItemSheet(null);
+$('itemCancelBtn').onclick = () => $('itemOverlay').classList.remove('show');
+$('itemOverlay').onclick = (e) => { if(e.target.id==='itemOverlay') $('itemOverlay').classList.remove('show'); };
+ 
+$('itemSaveBtn').onclick = async () => {
+  const name = $('it_name').value.trim();
+  const refQty = Number($('it_ref').value) || 0;
+  if(!name){ showToast('لازم تكتب اسم المادة'); return; }
+  if(!itemsRef){ showToast('ما تم الاتصال بقاعدة البيانات بعد'); return; }
+  try{
+    if(editingItemId){ await itemsRef.doc(editingItemId).update({name, refQty}); }
+    else { await itemsRef.add({name, refQty, createdAt: Date.now()}); }
+    $('itemOverlay').classList.remove('show');
+    showToast('تم الحفظ');
+  }catch(e){ console.error(e); showToast('صار خطأ بالحفظ'); }
+};
+ 
+async function deleteItem(id){
+  if(!confirm('حذف هذي المادة وكل سجل جردها؟')) return;
+  try{
+    await itemsRef.doc(id).delete();
+    const toDelete = counts.filter(c=>c.itemId===id);
+    for(const c of toDelete){ await countsRef.doc(c.id).delete(); }
+    showToast('تم الحذف');
+  }catch(e){ showToast('صار خطأ بالحذف'); }
+}
+function editItem(id){ const it = items.find(x=>x.id===id); if(it) openItemSheet(it); }
+window.deleteItem = deleteItem;
+window.editItem = editItem;
+ 
+// ---- الجرد الأسبوعي (كل المواد بنفس الوقت) ----
+$('openWeeklyCountBtn').onclick = () => {
+  $('wc_date').value = new Date().toISOString().slice(0,10);
+  $('weeklyCountList').innerHTML = items.map(it=>{
+    const last = latestCount(it.id);
+    return `
+      <div class="multi-select-row" style="align-items:center;">
+        <span style="flex:1;">${it.name}</span>
+        <input type="text" inputmode="numeric" data-item-id="${it.id}" data-item-name="${it.name}"
+               placeholder="${last ? last.quantity : '0'}" style="width:90px;text-align:center;">
+      </div>
+    `;
+  }).join('') || '<div style="padding:16px;color:var(--muted);text-align:center;">ضيف مواد أول من زر (+)</div>';
+  $('weeklyCountOverlay').classList.add('show');
+};
+$('weeklyCountCancelBtn').onclick = () => $('weeklyCountOverlay').classList.remove('show');
+$('weeklyCountOverlay').onclick = (e) => { if(e.target.id==='weeklyCountOverlay') $('weeklyCountOverlay').classList.remove('show'); };
+ 
+$('weeklyCountSaveBtn').onclick = async () => {
+  const date = $('wc_date').value;
+  if(!date){ showToast('لازم تحدد تاريخ الجرد'); return; }
+  const inputs = [...$('weeklyCountList').querySelectorAll('input')];
+  const toSave = inputs.filter(i=>i.value.trim() !== '');
+  if(toSave.length===0){ showToast('ما كتبت أي كمية'); return; }
+  try{
+    for(const inp of toSave){
+      await countsRef.add({
+        itemId: inp.dataset.itemId,
+        itemName: inp.dataset.itemName,
+        quantity: Number(inp.value)||0,
+        date,
+        createdAt: Date.now()
+      });
+    }
+    $('weeklyCountOverlay').classList.remove('show');
+    showToast(`تم تسجيل جرد ${toSave.length} ماده`);
+  }catch(e){ console.error(e); showToast('صار خطأ بحفظ الجرد'); }
+};
+ 
+// ---- سجل الجرد لمادة معينة ----
+function openHistory(itemId){
+  const it = items.find(x=>x.id===itemId);
+  const list = countsForItem(itemId);
+  $('historyTitle').textContent = `سجل جرد: ${it ? it.name : ''}`;
+  $('historyList').innerHTML = list.length ? list.map(c=>`
+    <div class="history-row">
+      <span>${formatDateArabic(c.date)}</span>
+      <span class="hq">${c.quantity}</span>
+    </div>
+  `).join('') : '<div style="padding:16px;color:var(--muted);text-align:center;">ما فيه جرد مسجل لهذي المادة بعد</div>';
+  $('historyOverlay').classList.add('show');
+}
+$('historyCloseBtn').onclick = () => $('historyOverlay').classList.remove('show');
+$('historyOverlay').onclick = (e) => { if(e.target.id==='historyOverlay') $('historyOverlay').classList.remove('show'); };
+window.openHistory = openHistory;
+ 
+// ---- العرض الرئيسي ----
+function renderInventory(){
+  const withLatest = items.map(it=>({it, last:latestCount(it.id), prev:previousCount(it.id)}));
+  const underCount = withLatest.filter(x=> x.last && x.last.quantity < x.it.refQty).length;
+  const overCount = withLatest.filter(x=> x.last && x.last.quantity > x.it.refQty).length;
+  const noCount = withLatest.filter(x=> !x.last).length;
+ 
+  $('inventoryStatsRow').innerHTML = `
+    <div class="stat-chip"><div class="n">${items.length}</div><div class="l">إجمالي المواد</div></div>
+    <div class="stat-chip"><div class="n">${underCount}</div><div class="l">تحت الحد</div></div>
+    <div class="stat-chip"><div class="n">${overCount}</div><div class="l">فوق الحد</div></div>
+    <div class="stat-chip"><div class="n">${noCount}</div><div class="l">بدون جرد</div></div>
+  `;
+ 
+  const underItems = withLatest.filter(x=> x.last && x.last.quantity < x.it.refQty);
+  if(underItems.length>0){
+    $('inventoryAlerts').innerHTML = `
+      <div class="alert-banner danger">
+        <div class="alert-banner-title">⚠️ مواد تحت الحد الأدنى المطلوب (${underItems.length})</div>
+        ${underItems.map(x=>`
+          <div class="alert-row">
+            <span>${x.it.name} — الموجود ${x.last.quantity} من أصل ${x.it.refQty}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  } else {
+    $('inventoryAlerts').innerHTML = '';
+  }
+ 
+  const list = $('inventoryList');
+  if(items.length===0){
+    list.innerHTML = `
+      <div class="empty">
+        <div class="icon">📦</div>
+        <b>ما فيه مواد مسجلة</b>
+        اضغط زر (+) لإضافة أول مادة
+      </div>`;
+    return;
+  }
+ 
+  list.innerHTML = [...items].sort((a,b)=>a.name.localeCompare(b.name,'ar')).map(it=>{
+    const last = latestCount(it.id);
+    const prev = previousCount(it.id);
+ 
+    let refBadge = `<span class="item-status ok">ضمن الحد</span>`;
+    if(last){
+      if(last.quantity < it.refQty) refBadge = `<span class="item-status under">ناقص عن الحد</span>`;
+      else if(last.quantity > it.refQty) refBadge = `<span class="item-status over">زائد عن الحد</span>`;
+    } else {
+      refBadge = `<span class="item-status ok">بدون جرد</span>`;
+    }
+ 
+    let diffBadge = '';
+    if(last && prev){
+      const diff = last.quantity - prev.quantity;
+      if(diff>0) diffBadge = `<span class="diff-badge diff-up">▲ +${diff} عن الجرد السابق</span>`;
+      else if(diff<0) diffBadge = `<span class="diff-badge diff-down">▼ ${diff} عن الجرد السابق</span>`;
+      else diffBadge = `<span class="diff-badge diff-flat">= بدون تغيير</span>`;
+    }
+ 
+    return `
+      <div class="item-card">
+        <div class="item-card-top">
+          <span class="item-name">${it.name}</span>
+          ${refBadge}
+        </div>
+        <div class="item-qty-row">
+          <div>
+            <div class="item-qty-big">${last ? last.quantity : '—'}</div>
+            <div class="item-qty-label">آخر كمية مسجلة</div>
+          </div>
+          <div class="item-ref">الحد المطلوب: ${it.refQty}</div>
+          ${diffBadge}
+        </div>
+        <div class="item-last-date">${last ? 'آخر جرد: ' + formatDateArabic(last.date) : 'ما انجرد بعد'}</div>
+        <div class="unit-actions">
+          <button class="btn-mini edit" onclick="openHistory('${it.id}')">📜 السجل</button>
+          <button class="btn-mini edit" onclick="editItem('${it.id}')">✎ تعديل</button>
+          <button class="btn-mini del" onclick="deleteItem('${it.id}')">🗑 حذف</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+ 
 initFormLists();
 watchConnection();
 if(initFirebase()){
   listenEntries();
   initDeliveryFirestore();
+  initInventoryFirestore();
 } else {
   render();
 }
