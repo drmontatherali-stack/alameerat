@@ -790,8 +790,8 @@
   </div>
  
   <div class="view-toggle">
-    <button class="tab-btn active" id="deliveryViewCards">🗂️ بطاقات</button>
-    <button class="tab-btn" id="deliveryViewTable">📋 جدول الهواتف</button>
+    <button class="tab-btn" id="deliveryViewCards">🗂️ بطاقات</button>
+    <button class="tab-btn active" id="deliveryViewTable">📋 جدول الهواتف (الاعتماد الأساسي)</button>
   </div>
  
   <div style="text-align:left;margin-bottom:10px;">
@@ -969,18 +969,45 @@
 <script>
 // ===== القوائم الثابتة =====
 const CONTRACTORS = [
+  "ق1+2",
+  "احمد عواد ق 3",
+  "احمد عواد ق 6",
+  "اسعد هادي ق 3",
+  "جاسم زراك ق 4",
   "عادل عرار",
   "محمد عرار",
-  "جاسم زراق ق 4",
-  "جاسم زراك ق 5",
-  "ق 1+2",
+  "علي الكوفي ق 4",
+  "جاسم زراك ق 5"
+];
+ 
+// مقاولي نظام تسليم الدور (القطاع مفصول بحقل مستقل، فالاسم هنا بدون رقم قطاع)
+const DELIVERY_CONTRACTORS = [
   "احمد عواد",
+  "عادل عرار",
+  "سمير حنون",
+  "محمد عرار",
+  "جاسم زراك",
   "اسعد هادي",
-  "علي هويدي",
-  "عمر بولات",
+  "دياري كريم",
+  "اوات",
   "يوسف حسن",
-  "علي الكوفي",
-  "اسعد هادي ق 3"
+  "علي هويدي",
+  "عمر بولات"
+];
+ 
+// ترتيب تقسيم جدول الهواتف: مقاول ← قطاعاته بالترتيب المطلوب بالضبط
+const DELIVERY_GROUP_ORDER = [
+  {contractor:"احمد عواد", sectors:["الاول","الثالث","السادس"]},
+  {contractor:"عادل عرار", sectors:["الثاني","الرابع"]},
+  {contractor:"سمير حنون", sectors:["الاول","الثاني"]},
+  {contractor:"محمد عرار", sectors:["الرابع"]},
+  {contractor:"جاسم زراك", sectors:["الرابع","الخامس"]},
+  {contractor:"اسعد هادي", sectors:["الثاني","الثالث"]},
+  {contractor:"دياري كريم", sectors:[]},
+  {contractor:"اوات", sectors:["الاول","الثاني"]},
+  {contractor:"يوسف حسن", sectors:["الثاني"]},
+  {contractor:"علي هويدي", sectors:["الاول"]},
+  {contractor:"عمر بولات", sectors:["الاول"]}
 ];
  
 const CREWS = [
@@ -1010,7 +1037,7 @@ function fillSelect(sel, options, valueFn, labelFn, includeOther){
 function initFormLists(){
   fillSelect($('f_contractor'), CONTRACTORS, c=>c, c=>c, true);
   fillSelect($('f_crew'), CREWS, c=>`${c.name}|${c.type}`, c=>`${c.name} - ${c.type}`, true);
-  fillSelect($('u_contractor'), CONTRACTORS, c=>c, c=>c, true);
+  fillSelect($('u_contractor'), DELIVERY_CONTRACTORS, c=>c, c=>c, true);
 }
  
 $('u_contractor').addEventListener('change', ()=>{
@@ -1491,7 +1518,7 @@ let statusFilter = '';
 let deliveryTab = 'active'; // 'active' | 'delivered'
 const DEFAULT_WA_TEMPLATE = 'مرحبًا،\nدار {unit} جاهزة للتسليم (تذكير رقم {msgnum} من 3).\nيرجى التواصل معنا لتنسيق موعد الاستلام.\nمكتب التسليم الفني - مجمع الأميرات السكني 2';
 let waTemplate = DEFAULT_WA_TEMPLATE;
-let deliveryViewMode = 'cards'; // 'cards' | 'table'
+let deliveryViewMode = 'table'; // 'cards' | 'table' — الاعتماد الأساسي على الجدول
  
 $('deliveryTabActive').onclick = () => {
   deliveryTab = 'active';
@@ -1608,12 +1635,12 @@ function openUnitSheet(unit){
   $('u_deliveredDate').style.display = (unit && unit.delivered) ? 'block' : 'none';
  
   const contractorVal = unit ? (unit.contractor||'') : '';
-  if(unit && contractorVal && !CONTRACTORS.includes(contractorVal)){
+  if(unit && contractorVal && !DELIVERY_CONTRACTORS.includes(contractorVal)){
     $('u_contractor').value = '__other__';
     $('u_contractor_other').style.display = 'block';
     $('u_contractor_other').value = contractorVal;
   } else {
-    $('u_contractor').value = contractorVal || CONTRACTORS[0];
+    $('u_contractor').value = contractorVal || DELIVERY_CONTRACTORS[0];
     $('u_contractor_other').style.display = 'none';
     $('u_contractor_other').value = '';
   }
@@ -1690,8 +1717,16 @@ $('unitSaveBtn').onclick = async () => {
   const delivered = $('u_delivered_check').checked;
   const deliveredDate = delivered ? ($('u_deliveredDate').value || new Date().toISOString().slice(0,10)) : null;
  
+  // الحفاظ على حالة التبليغات الموجودة (لا تتصفر عند التعديل)
+  const notif1 = existing ? (existing.notif1||false) : false;
+  const notif1Date = existing ? (existing.notif1Date||null) : null;
+  const notif2 = existing ? (existing.notif2||false) : false;
+  const notif2Date = existing ? (existing.notif2Date||null) : null;
+  const notif3 = existing ? (existing.notif3||false) : false;
+  const notif3Date = existing ? (existing.notif3Date||null) : null;
+ 
   try{
-    const data = {code, sector, contractor, status, inspectionDate, deliveryDate, phone, notes, readyReminderCount, lastReminderDate, delivered, deliveredDate};
+    const data = {code, sector, contractor, status, inspectionDate, deliveryDate, phone, notes, readyReminderCount, lastReminderDate, delivered, deliveredDate, notif1, notif1Date, notif2, notif2Date, notif3, notif3Date};
     if(editingUnitId){
       await unitsRef.doc(editingUnitId).update(data);
     } else {
@@ -1719,7 +1754,6 @@ function editUnit(id){
   if(u) openUnitSheet(u);
 }
 async function markDelivered(id){
-  if(!confirm('تأكيد استلام هذي الدار؟ راح تنتقل لقائمة "الدور المسلمة".')) return;
   try{
     await unitsRef.doc(id).update({delivered:true, deliveredDate: new Date().toISOString().slice(0,10)});
     showToast('انتقلت الدار لقائمة المسلمة');
@@ -1735,6 +1769,14 @@ async function markUndelivered(id){
     showToast('صار خطأ بالتحديث');
   }
 }
+function askDeliveredFromTable(id){
+  const u = units.find(x=>x.id===id);
+  if(!u) return;
+  if(confirm(`هل تم استلام الدار ${u.code}؟`)){
+    markDelivered(id);
+  }
+}
+window.askDeliveredFromTable = askDeliveredFromTable;
 window.deleteUnit = deleteUnit;
 window.editUnit = editUnit;
 window.markDelivered = markDelivered;
@@ -1789,41 +1831,41 @@ function sendWhatsapp(id){
   if(!u) return;
   if(!u.phone){ showToast('ما فيه رقم هاتف مسجل لهذي الدار'); return; }
   window.open(buildWaLink(u), '_blank');
+  setTimeout(()=>{
+    const confirmed = confirm('هل يعتبر الدخول إلى واتساب تبليغ رسمي؟');
+    if(confirmed) markNextNotif(id);
+  }, 350);
 }
 window.sendWhatsapp = sendWhatsapp;
  
-// ---- دورة تذكير رسائل الجاهزية (3 رسائل بفارق 10 أيام) ----
-function getReminderInfo(unit){
-  if(unit.delivered) return null;
-  if(unit.status !== 'جاهز') return null;
-  const count = unit.readyReminderCount || 0;
-  if(count >= 3) return null; // خلصت الدورة
-  if(count === 0) return {due:true, msgNum:1};
-  const last = unit.lastReminderDate;
-  if(!last) return {due:true, msgNum:count+1};
-  const daysSince = -daysDiffFromToday(last);
-  if(daysSince >= 10) return {due:true, msgNum:count+1};
-  return {due:false, msgNum:count+1, daysRemaining: 10 - daysSince};
-}
- 
-async function sendReadyReminder(id){
+// ---- نظام التبليغات الثلاثة (تبليغ1/2/3 مع التاريخ) ----
+async function markNextNotif(id){
   const u = units.find(x=>x.id===id);
   if(!u) return;
-  if(!u.phone){ showToast('ما فيه رقم هاتف مسجل لهذي الدار'); return; }
-  const info = getReminderInfo(u);
-  const msgNum = info ? info.msgNum : ((u.readyReminderCount||0)+1);
-  window.open(buildWaLink(u, msgNum), '_blank');
+  const today = new Date().toISOString().slice(0,10);
+  let field=null, dateField=null, label='';
+  if(!u.notif1){ field='notif1'; dateField='notif1Date'; label='تبليغ 1'; }
+  else if(!u.notif2){ field='notif2'; dateField='notif2Date'; label='تبليغ 2'; }
+  else if(!u.notif3){ field='notif3'; dateField='notif3Date'; label='تبليغ 3'; }
+  if(!field){ showToast('كل التبليغات الثلاثة مسجلة أصلاً لهذي الدار'); return; }
   try{
-    await unitsRef.doc(id).update({
-      readyReminderCount: (u.readyReminderCount||0)+1,
-      lastReminderDate: new Date().toISOString().slice(0,10)
-    });
-    showToast(`تم تسجيل إرسال الرسالة ${msgNum} من 3`);
+    await unitsRef.doc(id).update({[field]:true, [dateField]:today});
+    showToast(`تم تسجيل ${label}`);
   }catch(e){
     console.error(e);
+    showToast('صار خطأ بالتسجيل');
   }
 }
-window.sendReadyReminder = sendReadyReminder;
+async function toggleNotif(id, field, dateField, checked){
+  try{
+    await unitsRef.doc(id).update({[field]:checked, [dateField]: checked ? new Date().toISOString().slice(0,10) : null});
+  }catch(e){
+    console.error(e);
+    showToast('صار خطأ بالتحديث');
+  }
+}
+window.markNextNotif = markNextNotif;
+window.toggleNotif = toggleNotif;
  
  
 // ---- حساب الفرق بالأيام عن اليوم ----
@@ -1869,48 +1911,59 @@ function renderDelivery(){
     <div class="stat-chip"><div class="n">${deliveredUnits.length}</div><div class="l">مسلمة ✅</div></div>
   `;
  
-  // بانر ١: تذكيرات دور الجاهزية (فقط للدور النشطة)
-  const reminderUnits = activeUnits.map(u=>({u, info:getReminderInfo(u)})).filter(x=>x.info && x.info.due);
-  if(reminderUnits.length>0){
-    $('readyReminders').innerHTML = `
-      <div class="reminder-banner">
-        <div class="alert-banner-title">🔔 دور جاهزة تحتاج رسالة تذكير (${reminderUnits.length})</div>
-        ${reminderUnits.map(({u, info})=>`
-          <div class="alert-row">
-            <span>${u.code} (رسالة ${info.msgNum} من 3)</span>
-            ${u.phone ? `<button class="wa-mini" onclick="sendReadyReminder('${u.id}')">إرسال</button>` : '<span style="font-size:11px;color:var(--muted);">ما فيه رقم</span>'}
-          </div>
-        `).join('')}
-      </div>
-    `;
-  } else {
-    $('readyReminders').innerHTML = '';
-  }
- 
-  // بانر ٢: التنبيهات (متأخرة + اليوم، فقط للدور النشطة)
-  const alertUnits = activeUnits.filter(u=>{
+  // التنبيهات: الدور اللي عبرت موعد تسليمها، مقسّمة حسب الجاهزية
+  const overdueActive = activeUnits.filter(u=>{
     const diff = daysDiffFromToday(u.deliveryDate);
     return diff !== null && diff <= 0;
   }).sort((a,b)=>daysDiffFromToday(a.deliveryDate)-daysDiffFromToday(b.deliveryDate));
  
-  if(deliveryTab==='active' && alertUnits.length>0){
-    $('deliveryAlerts').innerHTML = `
-      <div class="alert-banner danger">
-        <div class="alert-banner-title">⚠️ دور وصلت أو تجاوزت موعد التسليم (${alertUnits.length})</div>
-        ${alertUnits.map(u=>{
-          const diff = daysDiffFromToday(u.deliveryDate);
-          const label = diff===0 ? 'اليوم' : `متأخرة ${Math.abs(diff)} يوم`;
-          return `
+  const overdueLabel = (u)=>{
+    const diff = daysDiffFromToday(u.deliveryDate);
+    return diff===0 ? 'اليوم' : `متأخرة ${Math.abs(diff)} يوم`;
+  };
+ 
+  const readyOverdue = overdueActive.filter(u=>u.status==='جاهز');
+  const progressOverdue = overdueActive.filter(u=>u.status==='قيد العمل');
+  const notReadyOverdue = overdueActive.filter(u=>u.status==='غير جاهز');
+ 
+  let bannersHtml = '';
+  if(deliveryTab==='active'){
+    if(readyOverdue.length>0){
+      bannersHtml += `
+        <div class="reminder-banner">
+          <div class="alert-banner-title">🟢 دور جاهزة وعبر موعد تسليمها (${readyOverdue.length})</div>
+          ${readyOverdue.map(u=>`
             <div class="alert-row">
-              <span>${u.code} (${label})</span>
-              ${u.phone ? `<button class="wa-mini" onclick="sendWhatsapp('${u.id}')">واتساب</button>` : ''}
-            </div>`;
-        }).join('')}
-      </div>
-    `;
-  } else {
-    $('deliveryAlerts').innerHTML = '';
+              <span>${u.code} (${overdueLabel(u)})</span>
+              ${u.phone ? `<button class="wa-mini" onclick="sendWhatsapp('${u.id}')">واتساب</button>` : '<span style="font-size:11px;color:var(--muted);">ما فيه رقم</span>'}
+            </div>
+          `).join('')}
+        </div>`;
+    }
+    if(progressOverdue.length>0){
+      bannersHtml += `
+        <div class="alert-banner">
+          <div class="alert-banner-title" style="color:#B25E00;">🟠 دور قيد العمل وعبر موعد تسليمها (${progressOverdue.length})</div>
+          ${progressOverdue.map(u=>`
+            <div class="alert-row"><span>${u.code} (${overdueLabel(u)})</span></div>
+          `).join('')}
+        </div>`;
+    }
+    if(notReadyOverdue.length>0){
+      bannersHtml += `
+        <div class="alert-banner danger">
+          <div class="alert-banner-title">🔴 دور غير جاهزة وعبر موعد تسليمها (${notReadyOverdue.length})</div>
+          ${notReadyOverdue.map(u=>`
+            <div class="alert-row">
+              <span>${u.code} (${overdueLabel(u)})</span>
+              ${u.phone ? `<button class="wa-mini" onclick="sendWhatsapp('${u.id}')">واتساب</button>` : '<span style="font-size:11px;color:var(--muted);">ما فيه رقم</span>'}
+            </div>
+          `).join('')}
+        </div>`;
+    }
   }
+  $('readyReminders').innerHTML = bannersHtml;
+  $('deliveryAlerts').innerHTML = '';
  
   // إظهار/إخفاء عناصر التحكم الخاصة بالدور النشطة فقط
   const isActiveTab = deliveryTab === 'active';
@@ -1955,6 +2008,7 @@ function getMaintenanceInfo(unitCode){
         <div class="unit-dates">
           ${u.sector ? `<span>القطاع: ${u.sector}</span>` : ''}
           ${u.contractor ? `<span>المقاول: ${u.contractor}</span>` : ''}
+          <span>موعد التسليم: ${u.deliveryDate ? formatDateArabic(u.deliveryDate) : '—'}</span>
           <span>تاريخ الاستلام: ${u.deliveredDate ? formatDateArabic(u.deliveredDate) : '—'}</span>
         </div>
         ${u.phone ? `<div class="unit-phone">📞 ${u.phone}</div>` : ''}
@@ -1986,33 +2040,88 @@ function getMaintenanceInfo(unitCode){
     return;
   }
  
-  // ===== وضع الجدول (لإدخال أرقام الهواتف بسرعة) =====
+  // ===== وضع الجدول (الاعتماد الأساسي: تقسيم مخصص + واتساب + تبليغات + تم الاستلام) =====
   if(deliveryViewMode === 'table'){
-    const sortedTable = [...filtered].sort((a,b)=>{
-      const da = a.deliveryDate ? new Date(a.deliveryDate).getTime() : Infinity;
-      const db_ = b.deliveryDate ? new Date(b.deliveryDate).getTime() : Infinity;
-      return da - db_;
-    });
-    list.innerHTML = `
-      <table class="phone-table">
-        <thead>
+    // تقسيم الدور حسب ترتيب المقاول والقطاع المخصص، وأي دور متبقية بالآخر
+    const used = new Set();
+    let groupsHtml = '';
+    let seq = 0;
+ 
+    function renderTableRows(rows){
+      return rows.map(u=>{
+        seq++;
+        const notif1Title = u.notif1Date ? `تبليغ 1: ${formatDateArabic(u.notif1Date)}` : 'تبليغ 1';
+        const notif2Title = u.notif2Date ? `تبليغ 2: ${formatDateArabic(u.notif2Date)}` : 'تبليغ 2';
+        const notif3Title = u.notif3Date ? `تبليغ 3: ${formatDateArabic(u.notif3Date)}` : 'تبليغ 3';
+        return `
           <tr>
-            <th>#</th><th>رقم الدار</th><th>القطاع</th><th>المقاول</th><th>الحالة</th><th>رقم الهاتف</th>
+            <td>${seq}</td>
+            <td class="phone-code-cell">${u.code}</td>
+            <td>${u.status}</td>
+            <td>${u.deliveryDate ? formatDateArabic(u.deliveryDate) : '—'}</td>
+            <td><input type="tel" value="${u.phone||''}" placeholder="07xxxxxxxxx" data-id="${u.id}" onchange="savePhoneInline(this)"></td>
+            <td>${u.phone ? `<button class="btn-mini wa" onclick="sendWhatsapp('${u.id}')" title="فتح واتساب">💬</button>` : '—'}</td>
+            <td>
+              <label title="${notif1Title}" style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                <input type="checkbox" ${u.notif1?'checked':''} onchange="toggleNotif('${u.id}','notif1','notif1Date',this.checked)">
+                <span style="font-size:9px;color:var(--muted);">${u.notif1Date ? formatDateArabic(u.notif1Date) : ''}</span>
+              </label>
+            </td>
+            <td>
+              <label title="${notif2Title}" style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                <input type="checkbox" ${u.notif2?'checked':''} onchange="toggleNotif('${u.id}','notif2','notif2Date',this.checked)">
+                <span style="font-size:9px;color:var(--muted);">${u.notif2Date ? formatDateArabic(u.notif2Date) : ''}</span>
+              </label>
+            </td>
+            <td>
+              <label title="${notif3Title}" style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                <input type="checkbox" ${u.notif3?'checked':''} onchange="toggleNotif('${u.id}','notif3','notif3Date',this.checked)">
+                <span style="font-size:9px;color:var(--muted);">${u.notif3Date ? formatDateArabic(u.notif3Date) : ''}</span>
+              </label>
+            </td>
+            <td><button class="btn-mini wa" style="background:#2E9E5B;" onclick="askDeliveredFromTable('${u.id}')" title="هل تم الاستلام؟">✓</button></td>
           </tr>
-        </thead>
-        <tbody>
-          ${sortedTable.map((u,i)=>`
+        `;
+      }).join('');
+    }
+ 
+    function tableGroupHeader(title, count){
+      return `<tr><td colspan="9" class="sector-header" style="margin:14px 0 4px;background:var(--paper);">${title} (${count})</td></tr>`;
+    }
+ 
+    DELIVERY_GROUP_ORDER.forEach(grp=>{
+      if(grp.sectors.length===0){
+        const rows = filtered.filter(u=>u.contractor===grp.contractor && !used.has(u.id));
+        if(rows.length===0) return;
+        rows.forEach(u=>used.add(u.id));
+        groupsHtml += tableGroupHeader(grp.contractor, rows.length) + renderTableRows(rows);
+      } else {
+        grp.sectors.forEach(sec=>{
+          const rows = filtered.filter(u=>u.contractor===grp.contractor && (u.sector||'').trim()===sec && !used.has(u.id));
+          if(rows.length===0) return;
+          rows.forEach(u=>used.add(u.id));
+          groupsHtml += tableGroupHeader(`${grp.contractor} — القطاع ${sec}`, rows.length) + renderTableRows(rows);
+        });
+      }
+    });
+ 
+    // أي دور ما دخلت بالتقسيم المخصص (مقاول/قطاع غير معرّف بالترتيب)
+    const leftover = filtered.filter(u=>!used.has(u.id));
+    if(leftover.length>0){
+      groupsHtml += tableGroupHeader('دور أخرى', leftover.length) + renderTableRows(leftover);
+    }
+ 
+    list.innerHTML = `
+      <div style="overflow-x:auto;">
+        <table class="phone-table">
+          <thead>
             <tr>
-              <td>${i+1}</td>
-              <td class="phone-code-cell">${u.code}</td>
-              <td>${u.sector||'—'}</td>
-              <td>${u.contractor||'—'}</td>
-              <td>${u.status}</td>
-              <td><input type="tel" value="${u.phone||''}" placeholder="07xxxxxxxxx" data-id="${u.id}" onchange="savePhoneInline(this)"></td>
+              <th>#</th><th>رقم الدار</th><th>الحالة</th><th>موعد التسليم</th><th>الهاتف</th><th>واتساب</th><th>تبليغ1</th><th>تبليغ2</th><th>تبليغ3</th><th>استلام</th>
             </tr>
-          `).join('')}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>${groupsHtml}</tbody>
+        </table>
+      </div>
     `;
     return;
   }
@@ -2059,7 +2168,7 @@ function getMaintenanceInfo(unitCode){
                 ${u.phone ? `<div class="unit-phone">📞 ${u.phone}</div>` : ''}
             ${u.notes ? `<div class="entry-notes">📝 ${u.notes}</div>` : ''}
             <div class="unit-actions">
-              <button class="btn-mini wa" style="background:#2E9E5B;" onclick="markDelivered('${u.id}')">✓ تم الاستلام</button>
+              <button class="btn-mini wa" style="background:#2E9E5B;" onclick="askDeliveredFromTable('${u.id}')">✓ تم الاستلام</button>
               ${u.phone ? `<button class="btn-mini wa" onclick="sendWhatsapp('${u.id}')">واتساب</button>` : ''}
               <button class="btn-mini edit" onclick="editUnit('${u.id}')">✎ تعديل</button>
               <button class="btn-mini del" onclick="deleteUnit('${u.id}')">🗑 حذف</button>
