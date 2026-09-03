@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -796,6 +797,10 @@
   <div id="readyReminders"></div>
   <div id="deliveryAlerts"></div>
  
+  <div class="field" style="margin-bottom:14px;">
+    <input type="text" id="deliverySearchBox" placeholder="🔍 ابحث بأي شي — رقم دار، مقاول، قطاع، هاتف..." style="width:100%;">
+  </div>
+ 
   <div class="view-toggle">
     <button class="tab-btn active" id="deliveryTabActive">🏗️ الدور النشطة</button>
     <button class="tab-btn" id="deliveryTabDelivered">✅ الدور المسلمة</button>
@@ -924,8 +929,18 @@
   <div class="sheet">
     <h2>استيراد ومقارنة من الوورد</h2>
     <p style="font-size:12px;color:var(--muted);margin:-6px 0 12px;">
-      روح لملف الوورد → حدد الجدول كامل (أو حدد الكل Ctrl+A) → انسخ (Ctrl+C) → الصق هنا بالضبط زي ما هو. النظام يقرا كل رموز الدور تلقائيًا من النص، حتى لو فيه أعمدة ثانية وياها.
+      حدد المقاول والقطاع (اختياري — يضيّق المقارنة على نطاق محدد بس)، وألصق فقط الصفوف اللي تخصهم من الوورد لأدق نتيجة.
     </p>
+    <div class="row2">
+      <div class="field">
+        <label>المقاول</label>
+        <select id="ic_contractorFilter"><option value="">كل المقاولين</option></select>
+      </div>
+      <div class="field">
+        <label>القطاع</label>
+        <select id="ic_sectorFilter"><option value="">كل القطاعات</option></select>
+      </div>
+    </div>
     <div class="field">
       <textarea id="ic_pasteArea" rows="8" placeholder="الصق محتوى جدول الوورد هنا..." style="width:100%;padding:10px 12px;font-size:13px;font-family:'IBM Plex Mono',monospace;border:1px solid var(--paper-line);border-radius:10px;"></textarea>
     </div>
@@ -1907,6 +1922,8 @@ function askDeliveredFromTable(id){
 }
 window.askDeliveredFromTable = askDeliveredFromTable;
  
+$('deliverySearchBox').addEventListener('input', renderDelivery);
+ 
 // ============================================================
 // ===== استيراد ومقارنة من ملف الوورد (لصق نص) =====
 // ============================================================
@@ -1916,7 +1933,27 @@ function extractCodesFromText(text){
   return [...new Set(matches.map(m=>m.toUpperCase()))];
 }
  
+function populateImportCompareFilters(){
+  const cf = $('ic_contractorFilter');
+  cf.innerHTML = '<option value="">كل المقاولين</option>' + DELIVERY_CONTRACTORS.map(c=>`<option value="${c}">${c}</option>`).join('');
+  updateImportCompareSectors();
+}
+function updateImportCompareSectors(){
+  const contractor = $('ic_contractorFilter').value;
+  const sf = $('ic_sectorFilter');
+  let sectors;
+  const grp = DELIVERY_GROUP_ORDER.find(g=>g.contractor===contractor);
+  if(grp && grp.sectors.length>0){
+    sectors = grp.sectors;
+  } else {
+    sectors = [...new Set(units.map(u=>(u.sector||'').trim()).filter(Boolean))].sort();
+  }
+  sf.innerHTML = '<option value="">كل القطاعات</option>' + sectors.map(s=>`<option value="${s}">${s}</option>`).join('');
+}
+$('ic_contractorFilter').addEventListener('change', updateImportCompareSectors);
+ 
 $('openImportCompareBtn').onclick = () => {
+  populateImportCompareFilters();
   $('ic_pasteArea').value = '';
   $('ic_results').innerHTML = '';
   $('importCompareOverlay').classList.add('show');
@@ -1932,16 +1969,24 @@ $('ic_compareBtn').onclick = () => {
     return;
   }
  
-  const activeCodes = units.filter(u=>!u.delivered).map(u=>({id:u.id, code:(u.code||'').toUpperCase()}));
-  const deliveredCodesSet = new Set(units.filter(u=>u.delivered).map(u=>(u.code||'').toUpperCase()));
-  const activeCodesSet = new Set(activeCodes.map(x=>x.code));
+  const scopeContractor = $('ic_contractorFilter').value;
+  const scopeSector = $('ic_sectorFilter').value;
+  const inScope = (u) => (!scopeContractor || u.contractor===scopeContractor) && (!scopeSector || (u.sector||'').trim()===scopeSector);
  
-  // دور بالوورد وما هي مسجلة عندك أصلًا (لا نشطة ولا مسلمة) => جديدة
-  const newCodes = fileCodes.filter(c=>!activeCodesSet.has(c) && !deliveredCodesSet.has(c));
- 
-  // دور نشطة عندك بس مو موجودة بالوورد => يمكن انسلمت
+  const activeCodes = units.filter(u=>!u.delivered && inScope(u)).map(u=>({id:u.id, code:(u.code||'').toUpperCase()}));
+  const deliveredCodes = units.filter(u=>u.delivered && inScope(u)).map(u=>({id:u.id, code:(u.code||'').toUpperCase()}));
+  const allActiveSet = new Set(units.filter(u=>!u.delivered).map(u=>(u.code||'').toUpperCase()));
+  const allDeliveredSet = new Set(units.filter(u=>u.delivered).map(u=>(u.code||'').toUpperCase()));
   const fileCodesSet = new Set(fileCodes);
+ 
+  // دور بالوورد وما هي مسجلة عندك أصلًا (لا نشطة ولا مسلمة، بأي نطاق) => جديدة
+  const newCodes = fileCodes.filter(c=>!allActiveSet.has(c) && !allDeliveredSet.has(c));
+ 
+  // دور نشطة عندك (ضمن النطاق المحدد) بس مو موجودة بالوورد => يمكن انسلمت
   const missingUnits = activeCodes.filter(x=>!fileCodesSet.has(x.code));
+ 
+  // دور مسلمة عندك (ضمن النطاق المحدد) لكن لسا موجودة بالوورد => تناقض يحتاج تحقق
+  const stillInFileUnits = deliveredCodes.filter(x=>fileCodesSet.has(x.code));
  
   let html = '';
  
@@ -1949,20 +1994,31 @@ $('ic_compareBtn').onclick = () => {
   if(newCodes.length===0){
     html += '<div class="ic-empty">ما فيه دور جديدة</div>';
   } else {
-    html += newCodes.map((c,i)=>`
+    html += newCodes.map(c=>`
       <label class="ic-row"><input type="checkbox" class="ic-new-cb" data-code="${c}" checked><span>${c}</span></label>
     `).join('');
-    html += `<button class="btn btn-primary" id="ic_addSelectedBtn" style="width:100%;margin-top:8px;">إضافة المحددة كدور جديدة</button>`;
+    html += `<button class="btn btn-primary" id="ic_addSelectedBtn" style="width:100%;margin-top:8px;">إضافة المحددة كدور جديدة${scopeContractor?` (${scopeContractor}${scopeSector?' - '+scopeSector:''})`:''}</button>`;
   }
  
   html += `<div class="ic-section-title" style="margin-top:20px;">✅ دور عندك نشطة بس مو موجودة بالوورد — يمكن انسلمت (${missingUnits.length})</div>`;
   if(missingUnits.length===0){
-    html += '<div class="ic-empty">ما فيه دور ناقصة</div>';
+    html += '<div class="ic-empty">ما فيه دور ناقصة بهذا النطاق</div>';
   } else {
-    html += missingUnits.map((x,i)=>`
+    html += missingUnits.map(x=>`
       <label class="ic-row"><input type="checkbox" class="ic-missing-cb" data-id="${x.id}" checked><span>${x.code}</span></label>
     `).join('');
     html += `<button class="btn btn-primary" id="ic_markDeliveredBtn" style="width:100%;margin-top:8px;background:#2E9E5B;">نقل المحددة إلى الدور المسلمة</button>`;
+  }
+ 
+  html += `<div class="ic-section-title" style="margin-top:20px;">⚠️ دور عندك "مسلمة" بس لسا موجودة بالوورد — تحقق منها (${stillInFileUnits.length})</div>`;
+  if(stillInFileUnits.length===0){
+    html += '<div class="ic-empty">ما فيه تناقض — كل الدور المسلمة فعلًا مو موجودة بالوورد</div>';
+  } else {
+    html += `<p style="font-size:11.5px;color:var(--muted);margin:0 0 6px;">هذي الدور معلّمة عندك "مسلمة" بس لسا مكتوبة بالوورد — يمكن غلط بالتحديد أو التسليم انلغى.</p>`;
+    html += stillInFileUnits.map(x=>`
+      <label class="ic-row"><input type="checkbox" class="ic-revert-cb" data-id="${x.id}" checked><span>${x.code}</span></label>
+    `).join('');
+    html += `<button class="btn btn-secondary" id="ic_revertBtn" style="width:100%;margin-top:8px;">رجّع المحددة لقائمة الدور النشطة</button>`;
   }
  
   $('ic_results').innerHTML = html;
@@ -1974,7 +2030,7 @@ $('ic_compareBtn').onclick = () => {
       try{
         for(const code of selected){
           await unitsRef.add({
-            code, sector:'', contractor:'', status:'قيد العمل',
+            code, sector: scopeSector||'', contractor: scopeContractor||'', status:'قيد العمل',
             inspectionDate:'', deliveryDate:'', phone:'', notes:'',
             readyReminderCount:0, lastReminderDate:null,
             delivered:false, deliveredDate:null,
@@ -1997,6 +2053,20 @@ $('ic_compareBtn').onclick = () => {
           await unitsRef.doc(id).update({delivered:true, deliveredDate: new Date().toISOString().slice(0,10)});
         }
         showToast(`تم نقل ${selected.length} دار للمسلمة`);
+        $('importCompareOverlay').classList.remove('show');
+      }catch(e){ console.error(e); showToast('صار خطأ بالتحديث'); }
+    };
+  }
+ 
+  if(stillInFileUnits.length>0){
+    $('ic_revertBtn').onclick = async () => {
+      const selected = [...document.querySelectorAll('.ic-revert-cb:checked')].map(cb=>cb.dataset.id);
+      if(selected.length===0){ showToast('ما حددت أي دار'); return; }
+      try{
+        for(const id of selected){
+          await unitsRef.doc(id).update({delivered:false, deliveredDate:null});
+        }
+        showToast(`تم إرجاع ${selected.length} دار للقائمة النشطة`);
         $('importCompareOverlay').classList.remove('show');
       }catch(e){ console.error(e); showToast('صار خطأ بالتحديث'); }
     };
@@ -2221,11 +2291,17 @@ function getMaintenanceInfo(unitCode){
       const db_ = b.deliveredDate ? new Date(b.deliveredDate).getTime() : 0;
       return db_ - da; // الأحدث استلامًا أولًا
     });
+    const delivSearchTerm = ($('deliverySearchBox').value||'').trim().toLowerCase();
+    if(delivSearchTerm){
+      delivFiltered = delivFiltered.filter(u=>[
+        u.code, u.contractor, u.sector, u.phone, u.notes, u.deliveredDate, u.deliveryDate
+      ].some(v => (v||'').toString().toLowerCase().includes(delivSearchTerm)));
+    }
     if(delivFiltered.length===0){
       list.innerHTML = `
         <div class="empty">
           <div class="icon">✅</div>
-          <b>ما فيه دور مسلمة بعد</b>
+          <b>ما فيه دور مسلمة مطابقة</b>
           لما تضغط "تم الاستلام" على أي دار، بتظهر هنا
         </div>`;
       return;
@@ -2263,12 +2339,19 @@ function getMaintenanceInfo(unitCode){
   if(selectedUnitContractors.size>0) filtered = filtered.filter(u=>selectedUnitContractors.has(u.contractor));
   if(selectedUnitSectors.size>0) filtered = filtered.filter(u=>selectedUnitSectors.has(u.sector && u.sector.trim() ? u.sector.trim() : ''));
  
+  const searchTerm = ($('deliverySearchBox').value||'').trim().toLowerCase();
+  if(searchTerm){
+    filtered = filtered.filter(u=>[
+      u.code, u.contractor, u.sector, u.status, u.phone, u.notes, u.deliveryDate, u.inspectionDate
+    ].some(v => (v||'').toString().toLowerCase().includes(searchTerm)));
+  }
+ 
   if(filtered.length===0){
     list.innerHTML = `
       <div class="empty">
         <div class="icon">🔑</div>
         <b>ما فيه دور مطابقة</b>
-        جرب تغيّر الفلاتر أو اضغط (+) لإضافة دار جديدة
+        جرب تغيّر الفلاتر أو كلمة البحث، أو اضغط (+) لإضافة دار جديدة
       </div>`;
     return;
   }
