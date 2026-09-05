@@ -697,43 +697,55 @@
   .dash-grid{
     display:grid;
     grid-template-columns:1fr 1fr;
-    gap:12px;
+    gap:10px;
   }
   .dash-card{
     background:var(--card);
     border-radius:var(--radius);
-    padding:16px 14px;
-    box-shadow:0 2px 10px rgba(22,35,59,.06);
+    padding:18px 14px;
+    box-shadow:0 2px 10px rgba(22,35,59,.07);
     border:1px solid #E4E9EF;
+    border-right:4px solid var(--paper-line);
     text-align:center;
+    transition:transform .1s;
   }
   .dash-card.clickable{cursor:pointer;}
-  .dash-card.clickable:active{background:#F7F9FB;}
+  .dash-card.clickable:active{background:#F7F9FB;transform:scale(.98);}
   .dash-card .dn{
     font-family:'IBM Plex Mono',monospace;
-    font-size:22px;
+    font-size:26px;
     font-weight:700;
     color:var(--navy);
+    line-height:1.1;
   }
+  .dash-card.danger{border-right-color:var(--rust);}
   .dash-card.danger .dn{color:var(--rust);}
+  .dash-card.warn{border-right-color:#E08A1E;}
   .dash-card.warn .dn{color:#B25E00;}
+  .dash-card.good{border-right-color:#2E9E5B;}
   .dash-card.good .dn{color:#1E7A45;}
   .dash-card .dl{
-    font-size:11.5px;
-    color:var(--muted);
-    margin-top:6px;
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink);
+    margin-top:8px;
+    line-height:1.4;
   }
+  .dash-card .dl b{color:var(--navy);}
   .dash-card .dhint{
-    font-size:9.5px;
-    color:#9AA7B5;
-    margin-top:4px;
+    font-size:10.5px;
+    color:var(--amber);
+    font-weight:700;
+    margin-top:6px;
   }
   .dash-section-title{
     font-family:'Cairo',sans-serif;
     font-weight:800;
-    font-size:13px;
+    font-size:14px;
     color:var(--navy);
-    margin:18px 0 10px;
+    margin:20px 2px 10px;
+    padding-bottom:6px;
+    border-bottom:2px solid var(--paper-line);
   }
   .dash-section-title:first-child{margin-top:0;}
 </style>
@@ -3238,11 +3250,15 @@ $('exportBackupBtn').onclick = () => {
 // ============================================================
 // ===== اللوحة الرئيسية الموحدة =====
 // ============================================================
-function dashDetail(title, rows){
-  $('dashDetailTitle').textContent = title;
-  $('dashDetailList').innerHTML = rows.length
-    ? rows.map(r=>`<div class="alert-row"><span>${r}</span></div>`).join('')
-    : '<div class="ic-empty">ما فيه شي هنا</div>';
+let dashDetailStore = {};
+
+function dashDetail(key){
+  const d = dashDetailStore[key];
+  if(!d) return;
+  $('dashDetailTitle').textContent = d.title;
+  $('dashDetailList').innerHTML = d.rows.length
+    ? d.rows.map(r=>`<div class="alert-row"><span>${r}</span></div>`).join('')
+    : '<div class="ic-empty">ما فيه شي هنا حاليًا 👍</div>';
   $('dashDetailOverlay').classList.add('show');
 }
 window.dashDetail = dashDetail;
@@ -3263,40 +3279,81 @@ function renderDashboard(){
   // ---- المخزن ----
   const underItems = items.map(it=>({it, last:latestCount(it.id)})).filter(x=>x.last && x.last.quantity < x.it.refQty);
 
-  // ---- المصاريف: أحدث شهر مسجل كمؤشر "الشهر الحالي" ----
+  // ---- المصاريف: أحدث شهر مسجل (بوضوح، بدون لبس) ----
   const latestExpense = [...expenses].sort((a,b)=>b.createdAt-a.createdAt)[0];
   const currentMonthLabel = latestExpense ? latestExpense.month : null;
   const currentMonthTotal = currentMonthLabel ? expenses.filter(e=>e.month===currentMonthLabel).reduce((s,e)=>s+(Number(e.amount)||0),0) : 0;
 
+  // تخزين بيانات التفصيل بمتغير منفصل (يحل مشكلة تعارض الاقتباس بالأزرار)
+  dashDetailStore = {
+    overdueActive: {
+      title: '⏰ دور متأخرة عن موعد تسليمها',
+      rows: overdueActiveD.map(u=>`<b>${u.code}</b> — متأخرة ${Math.abs(daysDiffFromToday(u.deliveryDate))} يوم (${u.status})`)
+    },
+    deliveredOverdue: {
+      title: '📦 دور أُنجزت بعد ما كانت متأخرة',
+      rows: deliveredButWasOverdue.map(u=>`<b>${u.code}</b> — استلمت بتاريخ ${u.deliveredDate?formatDateArabic(u.deliveredDate):'—'}`)
+    },
+    underStock: {
+      title: '📉 مواد تحت الحد الأدنى المطلوب',
+      rows: underItems.map(x=>`<b>${x.it.name}</b> — الموجود ${x.last.quantity} من أصل ${x.it.refQty}`)
+    }
+  };
+
+  const monthBlock = currentMonthLabel
+    ? `<div class="dl">مصروف <b>${currentMonthLabel}</b></div>`
+    : `<div class="dl" style="color:#9AA7B5;">ما فيه فقرات مصاريف مسجلة بعد</div>`;
+
   $('dashGrid').innerHTML = `
     <div class="dash-section-title">💰 سلف المقاولين</div>
     <div class="dash-grid">
-      <div class="dash-card ${remainAdvances>0?'danger':'good'}"><div class="dn">${fmt(remainAdvances)}</div><div class="dl">متبقي بالسلف</div></div>
-      <div class="dash-card"><div class="dn">${fmt(totalExpensesAll)}</div><div class="dl">إجمالي المصاريف لحد الآن</div></div>
+      <div class="dash-card ${remainAdvances>0?'danger':'good'}">
+        <div class="dn">${fmt(remainAdvances)}</div>
+        <div class="dl">إجمالي المتبقي للمقاولين</div>
+      </div>
+      <div class="dash-card">
+        <div class="dn">${fmt(totalExpensesAll)}</div>
+        <div class="dl">إجمالي كل المصاريف (كل الأشهر)</div>
+      </div>
     </div>
 
     <div class="dash-section-title">🔑 تسليم الدور</div>
     <div class="dash-grid">
-      <div class="dash-card danger clickable" onclick="dashDetail('دور متأخرة بالتسليم', ${JSON.stringify(overdueActiveD.map(u=>`${u.code} — متأخرة ${Math.abs(daysDiffFromToday(u.deliveryDate))} يوم`))})">
-        <div class="dn">${overdueActiveD.length}</div><div class="dl">دار متأخرة بالتسليم</div><div class="dhint">اضغط للتفصيل</div>
+      <div class="dash-card danger clickable" onclick="dashDetail('overdueActive')">
+        <div class="dn">${overdueActiveD.length}</div>
+        <div class="dl">دار متأخرة، لسا ما انسلمت</div>
+        <div class="dhint">👆 اضغط لعرض الأسماء</div>
       </div>
-      <div class="dash-card warn clickable" onclick="dashDetail('دور انجزت وموعدها كان عابر', ${JSON.stringify(deliveredButWasOverdue.map(u=>`${u.code} — استلمت ${u.deliveredDate?formatDateArabic(u.deliveredDate):''}`))})">
-        <div class="dn">${deliveredButWasOverdue.length}</div><div class="dl">أُنجزت ومتأخرة عن موعدها</div><div class="dhint">اضغط للتفصيل</div>
+      <div class="dash-card warn clickable" onclick="dashDetail('deliveredOverdue')">
+        <div class="dn">${deliveredButWasOverdue.length}</div>
+        <div class="dl">انسلمت بس كانت متأخرة</div>
+        <div class="dhint">👆 اضغط لعرض الأسماء</div>
       </div>
     </div>
 
     <div class="dash-section-title">📦 المخزن</div>
     <div class="dash-grid">
-      <div class="dash-card danger clickable" onclick="dashDetail('مواد تحت الحد الأدنى', ${JSON.stringify(underItems.map(x=>`${x.it.name} — الموجود ${x.last.quantity} من أصل ${x.it.refQty}`))})">
-        <div class="dn">${underItems.length}</div><div class="dl">مادة تحت الحد الأدنى</div><div class="dhint">اضغط للتفصيل</div>
+      <div class="dash-card danger clickable" onclick="dashDetail('underStock')">
+        <div class="dn">${underItems.length}</div>
+        <div class="dl">مادة تحت الحد الأدنى</div>
+        <div class="dhint">👆 اضغط لعرض الأسماء</div>
       </div>
-      <div class="dash-card"><div class="dn">${items.length}</div><div class="dl">إجمالي المواد المسجلة</div></div>
+      <div class="dash-card">
+        <div class="dn">${items.length}</div>
+        <div class="dl">إجمالي عدد المواد بالمخزن</div>
+      </div>
     </div>
 
     <div class="dash-section-title">💵 المصاريف</div>
     <div class="dash-grid">
-      <div class="dash-card"><div class="dn">${fmt(currentMonthTotal)}</div><div class="dl">${currentMonthLabel ? currentMonthLabel : 'ما فيه فقرات بعد'}</div></div>
-      <div class="dash-card"><div class="dn">${fmt(totalExpensesAll)}</div><div class="dl">الإجمالي الكلي (كل الأشهر)</div></div>
+      <div class="dash-card">
+        <div class="dn">${fmt(currentMonthTotal)}</div>
+        ${monthBlock}
+      </div>
+      <div class="dash-card">
+        <div class="dn">${fmt(totalExpensesAll)}</div>
+        <div class="dl">الإجمالي الكلي (كل الأشهر)</div>
+      </div>
     </div>
   `;
 }
