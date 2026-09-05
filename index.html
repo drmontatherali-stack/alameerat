@@ -693,6 +693,49 @@
     color:#B9C3D6;
     margin-right:6px;
   }
+
+  .dash-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .dash-card{
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:16px 14px;
+    box-shadow:0 2px 10px rgba(22,35,59,.06);
+    border:1px solid #E4E9EF;
+    text-align:center;
+  }
+  .dash-card.clickable{cursor:pointer;}
+  .dash-card.clickable:active{background:#F7F9FB;}
+  .dash-card .dn{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:22px;
+    font-weight:700;
+    color:var(--navy);
+  }
+  .dash-card.danger .dn{color:var(--rust);}
+  .dash-card.warn .dn{color:#B25E00;}
+  .dash-card.good .dn{color:#1E7A45;}
+  .dash-card .dl{
+    font-size:11.5px;
+    color:var(--muted);
+    margin-top:6px;
+  }
+  .dash-card .dhint{
+    font-size:9.5px;
+    color:#9AA7B5;
+    margin-top:4px;
+  }
+  .dash-section-title{
+    font-family:'Cairo',sans-serif;
+    font-weight:800;
+    font-size:13px;
+    color:var(--navy);
+    margin:18px 0 10px;
+  }
+  .dash-section-title:first-child{margin-top:0;}
 </style>
 </head>
 <body>
@@ -701,6 +744,7 @@
   <button class="page-nav-btn active" id="navAdvances">💰 سلف المقاولين</button>
   <button class="page-nav-btn" id="navDelivery">🔑 تسليم الدور</button>
   <button class="page-nav-btn" id="navInventory">📦 المخزن</button>
+  <button class="page-nav-btn" id="navDashboard" style="order:-1;">🏠 الرئيسية</button>
   <button class="page-nav-btn" id="navExpenses">💵 المصاريف</button>
   <button class="page-nav-btn" id="adminLoginBtn" style="flex:0 0 auto;padding:12px 14px;" title="دخول المسؤول">🔒</button>
 </div>
@@ -727,10 +771,27 @@
       <button class="btn btn-secondary" id="adminChangePassBtn">🔑 تغيير كلمة المرور</button>
     </div>
     <div class="sheet-actions" style="margin-top:10px;">
+      <button class="btn btn-secondary" id="openTrashBtn">🗑️ سلة المحذوفات</button>
+    </div>
+    <div class="sheet-actions" style="margin-top:10px;">
+      <button class="btn btn-secondary" id="exportBackupBtn">📥 تصدير نسخة احتياطية</button>
+    </div>
+    <div class="sheet-actions" style="margin-top:10px;">
       <button class="btn btn-secondary" id="adminLogoutBtn" style="background:#FDE3E1;color:var(--rust);">🚪 تسجيل خروج (رجوع لوضع المشاهدة)</button>
     </div>
     <div class="sheet-actions" style="margin-top:10px;">
       <button class="btn btn-primary" id="adminMenuCloseBtn">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="trashOverlay">
+  <div class="sheet">
+    <h2>🗑️ سلة المحذوفات</h2>
+    <p style="font-size:12px;color:var(--muted);margin:-6px 0 14px;">أي عنصر محذوف يبقى هنا 30 يوم قبل ما ينحذف نهائيًا. تقدر ترجعه بأي وقت خلال هالمدة.</p>
+    <div id="trashList"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-primary" id="trashCloseBtn">إغلاق</button>
     </div>
   </div>
 </div>
@@ -1123,6 +1184,31 @@
 </div>
 </div><!-- /expensesPage -->
 
+<div id="dashboardPage" style="display:none;">
+<header>
+  <div class="header-top">
+    <img class="logo-img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAACgCAIAAAAErfB6AAAgk0lEQVR42u2daZRdV3Xn997n3OlNNauqNJRkydZg2Rrski1LtjxjG89jDAZMwEAgMZkD6e6sJkmTrA6hgU7oEBMCYTQ4EIHxDDbyKCRbtixLtjVVqUqqKtVcb7zDOXv3h1cyxkmvrM4i4ZVy/0sf6oP0VOv+3t5nnz1d/OQHrwAAABARSHVyCREpfQont1LAJ7l06plTC06VAk6VAk6VAk6VAk6VAk6VAk4Bp0oBp0oBp0oBp0oBp0oBp0oBp4BTpYBTpYBTpYBTpYBTpYBTpYBTpYBTwKlSwKlSwKlSwKlSwKlSwKlSwCngVCngVCngVCngVCngVCngVCngFHCqFHCqFHCqFHCqFPAvTAiAKWB9MkJlBAYARBAglhOYEQEATyz2kxM/4Um96+8ks2AU0CRECNZEbGMgRKVJOYAkIgACoASUAAkgIwhIasFzSAwQW6ViozvmL6mG8dToEHFNK+U75GhEYQsggCBWgEEEAPhkewgnMWBk5ajxmdpZ511y250fKk4Vi9OjR/sP7N+752j/oamZKU3iOeAocrQCFkSROmcBREwBN/x5g3q6WFt+Ru+t7/1Qcab0d1/464U9i1adccb17zpH2I6Ojh4+sP/I67tHjg5MFssOQsb3tSYEELHMTEQp4MaVIqxUw0WnnH7RFTc8/vhPzl63emL44ET/7pefetDLFhYsXrps5epVZ67deNElbOJjfX2v79vbf+BAZXLMxYrWjgjAyXgez2HACIBCglaQmVQt5mz7/He+78N/+/m/WnjqaXrDGQ4lhZxKwjCpjQ++Onl4704hlWvvXHbq8hXLT7/8yisyt906MT768De+Mtj/WuB7wijIAICi67AFWABwLl+35rYFIwCIgIKIhd3sHR/66GOPPHD0wO5zN50dJXFi2HpB65IljqbjI8OUhCIcTQ3uebrvxW0/9nItblvrnR/8tXk9y/v6X0USsFrQCIoSF0AA2YIAMIiau1fqOQxYQAAjQTTgxDF/+KO/se/FF3Y8/Wiu4IPSbMjG0LJkwbyeU11XdS9bNTkxXigUwkql/8CBplxhplg6OnB0anh0tFicihIk5YinnECRJUUCwsIk9f9mDvvuuW3BjNagO1Mx7/nAbwwNDT96//c6Wt2pyaLvBXFsCalWLB4/crhaLS9fcaor5tC+3Wefd7Hr+HG1tGHjuf9031ZPues29AZ+FBVLk8OlcqlYDatgQlagHOUr8tAREJsC/uXYMKlSxVx+7e2OF/zTt/+mOa8xjgjAcdwwDkmxqZXHypWwWt4+cizIeIDw4vM7stlg7Fi/55LjuiJ6YmhAWbNq9emF3nngqlpYqZXCkcnRiYmxqaFhU6kRGECbAv4PP4ARRRxSzpr1G5/48cOCoUPKsQoE3SCI47BWnVrae/ZlN//qsSOHBgb6Bwb6jw8PHzvWz3HRUbDnlbgUKi/IHD906IWdP9qpHXJash0t3fMXtrQubF94yrI1Z/V0dX3tM39VnhrSLszRhOZcPoOFUECgYi052tFkFPsWOSZXOU5UK5ok8Vq7RiYn9768c/XyNStWrqOMY+OkODF+bPDwgf2vT5QGlcMC0t65ZNlpy4X08OjowQMHXH24vG3GybZ8/L/9sRtomTIAeo4exHPaRSMCKG0VKWssigVWrKxFVI6bzExay56XGTs28ORDW1958kl28tjitbcs7OpccOqKU9f3bvrUn39SwCRJFPi5bCY/MTVx6cUXHRk84rnoa/rJsy8Jc8IR4hy+H8/xaxKCIq0URXEMgCIMAoiolTJJgohaRBnTnA9amoLI2mo0MT4wNbhv1+svt9/+vrsYEch1icvTYyNHneliceBQrliuDg70n7XmDM/1RCSKE8D0HvxLugQzCzlEpKxJkBAAEVEp5ThOHEWA4Go3DEOLXKwUWXSiI4khm8u3tBQQQESQyHIiYo4dHQBFO3c853oZX3t7X9pNXjNba61Born7+rC5nqoUQiSiJEkQERGsMClNimq1GiIp14nDaCo2F2+5aOXpZzkeHh8++sD9D7UoxYTCjACJFXTcru4uQZicmkpCE8c1NmE218GWE2PUXH5Acz69jqSJ0JiEgABRWBQioYrCGhE6vj9eKm3YcsmKdRsefmzb1u8/Jk7uhne8K0GHBQnAUaoaJ00tbcuWr1zYs2TjBVsiYwLXVYSKiNmaJMEU8C/JRVuRxGKzaKGkoq1OiEAgI6zcVqnVHBCrdeD5a1at+8HXv1I89mo03v/gvV9raW5fsvzMMKpqxagVAoblytDhvtdffjmplrUSy5GVhBwCFm1EpWfwL/OqRA6imCQiwHo0pBAV6ahWQ0ARCVxvenwyicKM72qiOKaBIwOdXV3WGCQCRECoVivDx46Rwl3P73QUMbOAaK2sMDOjwrmbrJzbLlpAkBAAjLV1uiJCREqrJDFaa4XIxgqLWFZIIrOpZUc7IECICBBFoVIEwEkc2ShUiAggAo7jsLXMdk4/orkMGAEAiBQDIAARgswCBoAkSYgQkWySOADCTAIkwsyu6zqORhClFBGiAkEmAAfBEUBrAUFEHMcBZmFJAf/SCLNlrTUzJ4lBQBZGQEdrEYjjWClFRGxZWKDeXCmikOpCAKUUABhOAADEojABk4gAiojWOjFGYG538+g5aLRv+hlFayXM1iaAgCKMgK4n1tTiKipSqIw1lkV+dpNFFkAkFiClQEASULPFR6m3ESCAAJJ2Y1PvwCV869GQAv73ofsWwIiotQJgay0iE0iIZFyPrAm5ZBGIlUUxbGc7ZBEZgAFJOwkjIKGgjlGAWCwgghAAAYiIUjqITcKQEL6puXquAZ7jQRYLERnm5MRtVURc1wXAOI61VtZax3HqGas6GSJyXVc7DoAg4qy5/jMvgWI8h4CNTQziHH5Kcz6KdrQGAGMMICKiiDiugyJRFGmtQYRIGWvxjagbZ5EaYxFJRJj55z8UAVABgwlrpSKRYkmLDf/Bvro+hIIgAtpxgOu31VkLdnT9esNEyjKzMCfmjSMYiQRAEVm2RGSMMcYQvWHKwogkkg28A3tefOWVV3OFgkiSAv7lYGa2SmvH9ay1oJGZRURpFSdGhD3fF2ZrrRjzM5eFKABKKbZGOUo5+o3DHREBiZAUiIdQi6uJsAOWmd8USSNivc0S32r6KeD/z5Cq3rhKgoDAACziiJCAYP3GiwjkUVQ99OJ2JSzg1D2udrKhLcesgFwrBoCMMSSzLZiGlFKYz2bGKaOtH05MK6qSEhFMEsuJxGIiQC1gwJBrE1QKgEjVPwDE2sRYFBSbdbVCkNnvh6SA/y1hc304TBAIqQ5JBICgfqvNBdnRw68ee213k+sAC2kWYcfLCMUmsUQaOFFItTimN74wojOOO37s8PHR/umpI9/66mdnrI0qiedl2tvmd3R0tXTOL8yb39TUlMvlcrmsFwSuo5CUABjDca06PTM1U5yoTBzf8ZNHk3JREYIApxb8b+Ars3aMsZUoSZAtMAvDLGEBQgYEpbW1llDQsuO4YXGm75WXPUk8AhTDnFg2gvXuV/RtouLyQ49sHZ0YAlWdqMKi5Refdc7GpUuXNDc3K6XCWhjXwlKpOFMsjo+PWWuZrUZ0/SDf3JIpNM9funJFrmP/nidmfvj9rHKADYA0bON04wLmekcOsLEmX2hd2L0g39bV1j4vG2Q95YpQHMelylSpWCwXi9Mz01OT07XyBEeVV/fsO3xwXy7wHaVd30UboxhAAQQW9Jz4xz/8TjlWSRisWNV79fU3tc9rH+jv27nt8aNHj0xOTtSK0xBHLMyWebZFBFCYiER5IXh3f/yP1CL+9te/ztaiavRicQNbMKIIIAoIu0Hmrrt/F/326ampsFqOKmUTh8zc5SzyAt91PUJUWhdnJkaO9O3avvvQ6y862sQWX3p+54LFCyujBlEYgQmRaKpciST3zjt/7Yx15z37+GP3fuFTE2OjpLQwO66f85TjWkAEVIQOgIgICmuFE8XKpksvOW1V7yPf/Zup4b72fAaSUIAEFDSqk25cwHKiPOQ46sjAwMMPPXrZ22/57J/+ydTEsEtGSUQkhhWg0lpnspnA9zsXLV6ycv0N73h3debSh7Z+o//Q0cHjRVI8OT6mNTEAKj1TlUJL12/85m+Vy8VP/dlHpkaHWwK/uaWpWo03X3BJrRrv2vkcZVxATJIkrFVIKT8IFFAcJdnWzstvvGNk/Pgzjz3Q5osyNQGwQNLAXVvqkrOXNaoB14s6gKS1ouHDBzacvyXXmnltz3OdPrpKWEGztjlPHDRJWI1q5cH+vr27dr6881ml9NW3vJO93OG+Q8WxYxSXAmJArIQ207rqt/7wv7/6yvav3vMpbcqFbMCgAGUmtFfe9i6S+OC+59nRxXI1k2+5+KobFyxe2X9gMKdhslbcfNN7Vp55/g/+4fPDh/YEns8CAjS7KqJRb5INnMkSARBBMiyuUlFp+vEH79904eXzexZXajGIJicoG5gox0b5kdC5F156wcUXBZo9NE8/+tDnP/UX69etve3222PDqD0GHVvQmdxHf/93dm5/+t6v/n1TNuerLMbkcqwlJqXJzYxMTI+WQsl3XvuuD/7Bn32295K3V61CBVFc65x/6vkXX9t3eO/e5x/PZQLLWN8DAY09uzQHUpV17+dnMjuffmZ6bPzyq24OjR9FeO7GC+7+k8+tPf+a6dgdmY4p09rUNp8to3B7c45r01/4n5/o7mq/4VfuGJ+pRTo/E9Edd31kaPDV733rC23NebTIVqEoV2KySSHflG/uiDBz069+5A//5NOr1pz9nXvv/eQf/t4zTzzienHRJJsvvyXwm37y4PeFKzB3OqUb10X/vDGL1rparhmii6664ZVduysz0+PjI5WQt1x6xXlbLpycnFHab2vr2Lf7+YzvizGOQkX2+R3Pv+26GxzHfWnPvs0XX967cfM9n/tzTxuNiAIkCgGUhnIl7li84vzLr1u7bl1nW/bR7379H//hi6N9r+ZU0uxaY6v5rlNuevfdw/19D9335ZxnAeZGpyUizplUpWWbD+j557ZdfuOtF15x5bfv+Zxv+LlHtr7w5I83XnTZne+/ywmahgcPxaATUBqZ2bqKwrC29Vtf7z3v/Ew+f+W11/7o0UfL0xOthYxNBAEUGFF6LHRa2ttvuP1OrZwnH7hv29avhbViUzaDWiEYBKxVogtuvEIH2R8/cp+Oph2nkIiZKzXDuWHBdXmKxktFp9BywZbLdz27zdTGC76rRPa/9urOHTta2zrOOOucSrn82quvZYMAwLJYx3XK01O7nn9h9fres885796vftnHRIkQkEIE5Jlqtef0jR/+/f+iXe+ez/2vF37yYMFlL/ATBiHHkhMbzrYsuOV9Hx2eGHr4e3/XRBbYZxQAbvypcJxblU5rVVOgdz75oKC37pxLylFswCGE9rzjROPfuefPtn7t/9zy7g9e/447p2pRLKRIoTE5F7WN16zfMDB4NJ4ec0mhKAVkrZqq4YVX3/rrH/uvxwaPfPaPPzayf2d7S4BKxFSRMBEFpKOwturcy7xs24vbHkrKM1YrS1UAO1dm/udUNUmSjFYjw0OvvrR9y2WXPbXtu2ATBGYrDKj83MP3f3+wr/+9v/mx5qbm7331HhsWXd+PjXhB0LOoZ//BQyDWQW0RKiFTpuWdd71/7caLntn2yDe//CUX2dPe8cmio6AQZBQnGpLEepTruOCSy0szY7u2P5P1AxaeW0X0OdWygwYYs6ie+dH9qz/+iZVrN732zMOFXGAsZwvN7W2dq7J5G4Y7tu+89Mqbm9q6vvelTxfHR/wgQC25QnO5WKpfWouVqLNn1W0fuLv7lJUAsmbtuuWf/PMoqoal6VpYHR0ceOqxBzNS80lmKuact1/X0tnz4He+WJoab8trSazgXBo3nEuADYpinXOcw3t/enjPc1def9u+HU8lgLExa1auWLa21ySczzZJpv3Y6MiyVevf+3t/+s2//czw4X2ZXBMqFUUhEk7VzLI157zzQ78dNHVOTgw/9/RPktJ4tVRMkghtEmSCSnFGmFG7pShqn7/4bdfdMnZ0/0+feCTvazExAAkQAqeAf/FKlLbW90WybnL/fV/56H//4mXX3frAP36jpRDseG77008/bYWUgCJyvMw1t7+n9+Kb33/3737pLz8xNVMmpZVWYaW85oK3vfvDf6DcfHlq7Guf/8u+117MOCAshCBsUUArzGYyNXYiHbzr/R8JguDvP/MFG5ZyPjBbnt1zKZhG0b9wMSGKQrauC2NjY9WZ2pXv+MDRgf7BgSPNOd8jG7jadVReJdqUX3zhxY75PYtOWzc6dPjg/oOXX3vjnldeQ4C7fvuPtF8IS1N//9d/MXhgV2eT72nPd1xXo+85nku+jwmb6cj9lbt+Z9X6C777lf+974VnmzIe19ungQAIQeZEiDWX7sEA4FhAiESBsU5L1vvp41ubFy99792//cVPV/a/9NN5Tb4AxIrEkKM8V7zvfPlL3QsXo+vHSRSHUeeSFRs2X+oELaZW+sY9nx58fWdLzo1trKwrWM+YCZGeDiuJ8m9576+dteniH2395o5tjzRntbVxHS0AEMylYZa5ZMFv7otGBOW4u17Y2dHWfN3td0RRsmd/f82glsQFcVEC14mq5aNHj+QzzrEjhzacf9mqM3vzTU2E8f33/t2uZ59oK2TBCgm6FNfnzcKYS5Wka9Gqd//6x87s3fjDf/riQ9//ZmvGgzk7noSIcxUwsxCir2X3ju1JFF196zvXnrvFklOtJbVYKqEtVmMDODx6fHRowFN05oZNhfaFCPjEA9++/x+/lvOcOIyiyNQSLhkzE7F1CvMWr7zyxjtuft/djpv9+pf+4pkn72/NKmUsCM7RLQ5zzEW/5VcHEQ2c9Z1tD/9g756XL7ryuuuvvda57R1htVyenqrVqmEUIeHQ/t0Pbf1uuTgDzGPHh/a+sm/1mg2OAt9zHTcgL5NrbVvQs6Rn0eLWzm4bx9se/eFTj/5ganKwLRuQMSQAcyhontuJjrekPQQsgoAUMv7MyMB993z6kZa2BT0r5i1alG9uzecKQcbTXj7T3J5YnpmeJqLOrra7P/5JAAQIAWx9SsWGcXF6YmTg4FMP3rd39wul6RFXQ4dfgFgJWMBIGrjl6l+3hP/xgbc1lBOG2QCVBahecBVABDnx502AASwKAKCgIo0A1ppaHBorVgAJEYDR09rJqKTQ3NbUsVBpFwnZGmviMAojk1RrtTiMTK3McZXEBK52HM2CVhwGRSBKLKNwPQqb/f8RkOsvfah3FAFQfUGt1LfJAwNCIwTajeiicZYdnvihPnIg/+LNBGE2qcRsUZCQskFwIiIGAWBUwKKFw8mhqZHBSLRCS7MuHoiIlBJCX6Gb9VGABdgIIDGxJQsCyiIK/PytV95400N9oA3rv93s2uHGGnRpHMBCgADAQDI7PiAEFlhgtveu3kHxc18FzfWGCgZkIUEhsPoN+0YEBIP1rjnSmawXoLJSByGz0/4ingiCqtWMInKVEjAAVgEggwIAFJr9GnG9zi8ADASCgiD1wjAS0awfx9npxEbJg1AjmW59mB4FKDISWYiNIDCBBRELivFE+zqCILAIMiOgCDAQI1kiFmABASRSAKSQgJlBWdDGipgEhJktM9fdAyEohCixXYuXBYX2iFFIWQUASICWJWIbGznxohZiYEAGmf3eCSkm1wAZnJ0ibrT8FjUO3llnC8CoW9q78m1dQXNHIiiIoJyEvIQFCFGTIAICKgINoMAqHYsTSya0DitlFSUIpbBWDGu1JAbHi8GJyGXlCWlEQsT6mof6kL+gRce98sZblq5ZX07YKB2iSkAZUW42n2ufV5g3n5Vv0K0lNgGyRIhAhCJgLAjp6279FXBUIiw0W4ZonJCsUe7BCIIoAMRAQuq8Cy/uWtTj+Jnjg0eEObTot8y77sbrDr6+r1Qqh1GotGbmaqXISOh4l117U2y9LZdcfvDAXmPZ8byzejfMX9QTZIL9Bw+vPXfzmt5zd72wSxEqwjiOAYCI4jgpV0pAYLTXufjUw/2D63rX+dnMmb0bhOFI35HT15217IwzOruXHBsYqoThlddcMzo2Wo1jjVCrhcr1ooQvueKqto6OlrbmPbtfygYBMpPUD+2GCLIaxYIZ0aADQg4Lx8lMrdKyYFm+uSsEd/GK1e1dXRptz6lra9Rx4TXvuvm9v2VVvq17ye2/+YnulWtK1nYvWZxpal7Yc4rLQsZKaDJexnMy2ZbuVWdtamrtaG9t6+rqWr32rDI7p515Vra5pRIlp60/9/aPfHzRirOLxVo+nyeU1o5uN9/R1bUkG2QdgsmJqUL70ty8RdbPrNl4wekbzk9ULuFM2eLpG87JtbYLqdf2vfrADx7s6x+74qobbGIQRJC4YWy4YVy0QN2qqrVwxRlrzuzd1D9w7Ix1GyaK0frzL5u/dOX4THlqurzunE2LTl1llHfdrbcfHRk9eGjg6lvuEDdXqsYRS2RsJU56Tjtt7abN3/v+/Q8+/MiBvsG3XX9LaKBYCZeuWrN+80VD48UtV11P2RaVa7nk6uv7jo5eddPtTH5sxAKWawmzShI2VizSNTfdcuzocEfn/HxHV1v3wpnQ3vqeD1xz8zvKIZ1/6fXktZy75W1evuPM3s3FiNduOA+1CwIA3DguuoGuSYoBCAyik8uHRiYnJ3NNTT2nrWrt6umsxEuKNdfXuYxXrdUOHjp0zvrVru+//vq+87ecv3LVumyhFYm071bYqlx+02WXHhocFIEFS1YwoDgOBbmaRauCZaevKbR3d52ysn1B5AW5oaEBd9O5Te3zCq1t8+YvauuaPzY25nkuKA3kZHKFkeGjp5+5ZulpK7b/9PmXXnopmwnefed7Hn3gR+UStHaesuLM3smZmZ5TlrIbJIxWkBDpRLSYnsE/F2QRIAOgq4+OjCxZvPT0FStGjw1s3Lz52LFjjqPP7u098trLP37s0XkLF2+64OLpiaH581ovu+raqFxevnz5xMjQvj0vtLVm+w/uPz4y3NbWtvHCC1esXLnk1FO2P/VUuThtbTI9NXHZ29/e3dHR19fX07P41GWnDPYf2rix96EfbJ03r33F6as757VqpZ554rHOpuzoyPDo6OjM9MyVV799/PjxngXze3vXn7F65YqVp728Y/v2Z3duvnDL2eedMzY81FTITk2MLejuevG5p4727fec+mrahqCLiI2TySISYmQmTlhMghpVNQxXrj270NahFO5+/jkujQeF1tXnX7n2nI2D+3f98Ftfzvh5a4lQGRtpl9nGDnkCGMUJaQdIAVtrDSA1t7bf9Tu/98SDD01PTTe1tgPQjmefckzFgcSQUtoDRAtgGTWKx5ZRoXbiOAHA0BjXcRWCQlAEpZni5qtuuPDSS//mM58eHRkKXMdaBuW4aALFCMgN0xHQQNUkfMOGxXoEGUWBRk2czWbzGV9LMj02RBKzyLzuBQNH+nZs+5EHiQvWJYU28TSQDT2NCglAPNdBEbGJQ+I7QGJz2WBooG/X9mcWze/yHJWE1enR4byHGozvOhoEOPa1UmA8Ao31d2KJVqiRA0d5Shw0aGNfgasRXdq149mJkcGWrOeB9RU4mHhoSLjeUd8gA0sNZcH1TCSCICEJg2FmBYqUMEdxjIj55iZj7eTkpIgEQeC5rqt0HEdBECilK9WKMQkTeJ4XRZFWKl8oRFEYhqExFhEVUb5QGB0ds4bzhYJWqlKpFPL5aqns+342lymVZgCElI4SzmSz1UoFEAPfZ5PEYQ0AC01N1UolMQlqhUQAorUThmE+k3HFMksUJwD1pFtD5DwaKxdN9SwHoQEwaFetXVetRblcDgCSJAGAQj47MTEu5LS0NGdzOd/zfT8zePQoES1YsNAYMzo6MjkxfsopS2u1KhExs1JqZGQkm805ju7q6s5kgpGRkbGx0WXLls3MzGitldKJNUpRa2vLjh3b/cBFobZ8S2trqwAkccJsHdctlSsmSU5ZurRcLg8PDzflC0oRIjHb48dHA99raWrOZTO7X3werFHIAA1xD26gKHo2y0eYsG3r6iLPId/POJmmlpYkSYjI8/wkLE/PlHoWL5nf3R3HcWd396G+wcXLlsdxHFlmoAU9S8ViNtvU3NzGLMYkSqm2tk7X9YrFYj7fPDY2Pn/+QlKqFsZd8xeGtVotrHXMm48kk5MT4OgFixeb2BaC5iATRFHUOa+7VC5pzy+0YRLHpWpE2lu8bPn48EgQZJuamiYnJ844c325XNa+n8RhbMElQjYNkuhooHJhfYkgIyUsbjZYd3bv3r2vEegwDOMkJiREZBszm+7u7lqt5nseM4yOT5JSRBRHcZDJdHZ01KrlYrEUx7FSVH9NR33txrzOeURq4MiR5StOm5qamCkWXdcFEctCWgEIszHWaE2e40U1AyAtra2e6w0PD7l+xrIASK1aa25ubmlpOXTwYGfHPFJUrVY9z6tUqkJabCImcglIDAByY2SyGu8MBhIGx3ETE7MkIvWdsAICqEhAjDH1fh0RVlTfZUdKK7Ycm1g5pEhZa//lkFKpOEoAydFaTtSTgIEUInK9hyBJrNKBCAOAMUYphcKEKCBEiq1lEe06xpj6ZwqIQsWGSSlEApHGGRlusHowAkr9fVdg40iRaEUsMpsYQhC2AOAQ1fNvRBrqS2SFkYEAfEcLsrBVJ4qyP9tfJgIiYthzNLOAWJz1oYgIyCKzRV1yFIEwACCCdjQAnigiIAgjoQYUtprqSxFBRBBEaUSA+nZpns0PNkRhqXEAn5gHQREAUMD1Mv//29FZnq1CAc6mjkDqnv5Nx7q8pYIss/9K3uo6/vnI78/+KWr7s1VnPyvqn/gL+p8VfxuoZnhSveL9X3vK8ov4tF/sx/6nKTakSgGnSgGnauQzuHEDlRTwv1NQlCp10alSwCngVCngVCngVCngVCngVCngVCngVCngFHCqFHCqFHCqFHCqFHCqFHCqFHAKOFUKOFUKOFUKOFUKOFUKOFUKOFUKOAWcKgWcKgWcKgWcKgWcKgWcKgX8n0k6fQQnnd68eApTwCcf3Z8DnLrok91FI2L6FE4+C35jxV9qwWkUnWou6/8C/ZbHUE0IKGAAAAAASUVORK5CYII=" alt="شركة الأميرات الدولية">
+    <div class="eyebrow">مجمع الأميرات السكني 2 · مكتب التسليم الفني</div>
+  </div>
+  <h1>الرئيسية</h1>
+  <p class="sub">نظرة سريعة على كل الأنظمة بشاشة وحدة</p>
+</header>
+
+<main>
+  <div id="dashGrid"></div>
+
+  <div class="overlay" id="dashDetailOverlay">
+    <div class="sheet">
+      <h2 id="dashDetailTitle">تفصيل</h2>
+      <div id="dashDetailList"></div>
+      <div class="sheet-actions">
+        <button class="btn btn-primary" id="dashDetailCloseBtn">إغلاق</button>
+      </div>
+    </div>
+  </div>
+</main>
+</div><!-- /dashboardPage -->
+
 
 <div class="toast" id="toast"></div>
 
@@ -1184,6 +1270,7 @@ const CREWS = [
 ];
 
 let entries = [];
+let deletedEntries = [];
 let editingId = null;
 let viewMode = 'contractor'; // 'contractor' | 'crew'
 
@@ -1265,7 +1352,9 @@ function watchConnection(){
 function listenEntries(){
   if(!entriesRef) return;
   entriesRef.orderBy('createdAt', 'desc').onSnapshot(snapshot=>{
-    entries = snapshot.docs.map(d=>({id:d.id, ...d.data()}));
+    const all = snapshot.docs.map(d=>({id:d.id, ...d.data()}));
+    entries = all.filter(e=>!e.deleted);
+    deletedEntries = all.filter(e=>e.deleted);
     render();
   }, err=>{
     console.error(err);
@@ -1374,10 +1463,10 @@ $('saveBtn').onclick = async () => {
 };
 
 async function deleteEntry(id){
-  if(!confirm('حذف هذه الحركة؟')) return;
+  if(!confirm('حذف هذه الحركة؟ (تقدر ترجعها من سلة المحذوفات خلال 30 يوم)')) return;
   try{
-    await removeEntry(id);
-    showToast('تم الحذف');
+    await entriesRef.doc(id).update({deleted:true, deletedAt: Date.now()});
+    showToast('انتقلت لسلة المحذوفات');
   }catch(e){
     showToast('صار خطأ بالحذف');
   }
@@ -1677,6 +1766,7 @@ window.toggleCard = toggleCard;
 // ===== صفحة تسليم الدور =====
 // ============================================================
 let units = [];
+let deletedUnits = [];
 let unitsRef = null;
 let editingUnitId = null;
 let statusFilter = '';
@@ -1793,22 +1883,28 @@ function showPage(page){
   $('navDelivery').classList.toggle('active', page==='delivery');
   $('navInventory').classList.toggle('active', page==='inventory');
   $('navExpenses').classList.toggle('active', page==='expenses');
+  $('navDashboard').classList.toggle('active', page==='dashboard');
   $('advancesPage').style.display = page==='advances' ? 'block' : 'none';
   $('deliveryPage').style.display = page==='delivery' ? 'block' : 'none';
   $('inventoryPage').style.display = page==='inventory' ? 'block' : 'none';
   $('expensesPage').style.display = page==='expenses' ? 'block' : 'none';
+  $('dashboardPage').style.display = page==='dashboard' ? 'block' : 'none';
+  if(page==='dashboard') renderDashboard();
 }
 $('navAdvances').onclick = () => showPage('advances');
 $('navDelivery').onclick = () => showPage('delivery');
 $('navInventory').onclick = () => showPage('inventory');
 $('navExpenses').onclick = () => showPage('expenses');
+$('navDashboard').onclick = () => showPage('dashboard');
 
 // ---- Firestore لصفحة التسليم ----
 function initDeliveryFirestore(){
   if(!db) return;
   unitsRef = db.collection('delivery_units');
   unitsRef.onSnapshot(snapshot=>{
-    units = snapshot.docs.map(d=>({id:d.id, ...d.data()}));
+    const all = snapshot.docs.map(d=>({id:d.id, ...d.data()}));
+    units = all.filter(u=>!u.deleted);
+    deletedUnits = all.filter(u=>u.deleted);
     renderDelivery();
   }, err=>{
     console.error(err);
@@ -1944,10 +2040,10 @@ $('unitSaveBtn').onclick = async () => {
 };
 
 async function deleteUnit(id){
-  if(!confirm('حذف هذه الدار نهائيًا من النظام؟')) return;
+  if(!confirm('حذف هذي الدار؟ (تقدر ترجعها من سلة المحذوفات خلال 30 يوم)')) return;
   try{
-    await unitsRef.doc(id).delete();
-    showToast('تم الحذف');
+    await unitsRef.doc(id).update({deleted:true, deletedAt: Date.now()});
+    showToast('انتقلت لسلة المحذوفات');
   }catch(e){
     showToast('صار خطأ بالحذف');
   }
@@ -2604,6 +2700,7 @@ window.saveUnitFieldInline = saveUnitFieldInline;
 // ===== صفحة المخزن =====
 // ============================================================
 let items = [];       // {id, name, refQty, createdAt}
+let deletedItems = [];
 let counts = [];      // {id, itemId, itemName, quantity, date, createdAt}
 let itemsRef = null, countsRef = null;
 let editingItemId = null;
@@ -2613,7 +2710,9 @@ function initInventoryFirestore(){
   itemsRef = db.collection('inventory_items');
   countsRef = db.collection('inventory_counts');
   itemsRef.onSnapshot(snapshot=>{
-    items = snapshot.docs.map(d=>({id:d.id, ...d.data()}));
+    const all = snapshot.docs.map(d=>({id:d.id, ...d.data()}));
+    items = all.filter(it=>!it.deleted);
+    deletedItems = all.filter(it=>it.deleted);
     renderInventory();
   }, err=>{ console.error(err); showToast('صار خطأ بمزامنة المخزن'); });
   countsRef.onSnapshot(snapshot=>{
@@ -2654,12 +2753,10 @@ $('itemSaveBtn').onclick = async () => {
 };
 
 async function deleteItem(id){
-  if(!confirm('حذف هذي المادة وكل سجل جردها؟')) return;
+  if(!confirm('حذف هذي المادة؟ (تقدر ترجعها من سلة المحذوفات خلال 30 يوم، وسجل جردها يضل محفوظ)')) return;
   try{
-    await itemsRef.doc(id).delete();
-    const toDelete = counts.filter(c=>c.itemId===id);
-    for(const c of toDelete){ await countsRef.doc(c.id).delete(); }
-    showToast('تم الحذف');
+    await itemsRef.doc(id).update({deleted:true, deletedAt: Date.now()});
+    showToast('انتقلت لسلة المحذوفات');
   }catch(e){ showToast('صار خطأ بالحذف'); }
 }
 function editItem(id){ const it = items.find(x=>x.id===id); if(it) openItemSheet(it); }
@@ -2812,6 +2909,7 @@ function renderInventory(){
 // ===== صفحة المصاريف =====
 // ============================================================
 let expenses = [];
+let deletedExpenses = [];
 let expensesRef = null;
 let selectedExpenseMonths = new Set(); // فاضية = كل الأشهر (أرشيف كامل)
 let expenseMonthsInitialized = false;
@@ -2821,7 +2919,9 @@ function initExpensesFirestore(){
   if(!db) return;
   expensesRef = db.collection('expenses');
   expensesRef.onSnapshot(snapshot=>{
-    expenses = snapshot.docs.map(d=>({id:d.id, ...d.data()}));
+    const all = snapshot.docs.map(d=>({id:d.id, ...d.data()}));
+    expenses = all.filter(e=>!e.deleted);
+    deletedExpenses = all.filter(e=>e.deleted);
     renderExpenses();
   }, err=>{ console.error(err); showToast('صار خطأ بمزامنة المصاريف'); });
 }
@@ -2852,8 +2952,8 @@ $('expenseSaveBtn').onclick = async () => {
 };
 
 async function deleteExpense(id){
-  if(!confirm('حذف هذي الفقرة؟')) return;
-  try{ await expensesRef.doc(id).delete(); showToast('تم الحذف'); }
+  if(!confirm('حذف هذي الفقرة؟ (تقدر ترجعها من سلة المحذوفات خلال 30 يوم)')) return;
+  try{ await expensesRef.doc(id).update({deleted:true, deletedAt: Date.now()}); showToast('انتقلت لسلة المحذوفات'); }
   catch(e){ showToast('صار خطأ بالحذف'); }
 }
 window.deleteExpense = deleteExpense;
@@ -3021,6 +3121,186 @@ $('adminLogoutBtn').onclick = () => {
   showToast('تم تسجيل الخروج');
 };
 
+// ============================================================
+// ===== سلة المحذوفات (30 يوم قبل الحذف النهائي) =====
+// ============================================================
+const TRASH_DAYS = 30;
+const TRASH_MS = TRASH_DAYS * 24 * 60 * 60 * 1000;
+
+function daysLeftInTrash(deletedAt){
+  const elapsed = Date.now() - (deletedAt||0);
+  const remaining = TRASH_MS - elapsed;
+  return Math.max(0, Math.ceil(remaining / (24*60*60*1000)));
+}
+
+function renderTrash(){
+  const rows = [];
+
+  deletedEntries.forEach(e=>rows.push({
+    type:'سلفة مقاول', label:`${e.contractor||''} — ${e.item||''} (${fmt(e.total||0)})`,
+    deletedAt:e.deletedAt, restore:()=>entriesRef.doc(e.id).update({deleted:false, deletedAt:null}),
+    purge:()=>entriesRef.doc(e.id).delete()
+  }));
+  deletedUnits.forEach(u=>rows.push({
+    type:'دار تسليم', label:`دار ${u.code||''}`,
+    deletedAt:u.deletedAt, restore:()=>unitsRef.doc(u.id).update({deleted:false, deletedAt:null}),
+    purge:()=>unitsRef.doc(u.id).delete()
+  }));
+  deletedItems.forEach(it=>rows.push({
+    type:'مادة مخزن', label:`مادة ${it.name||''}`,
+    deletedAt:it.deletedAt, restore:()=>itemsRef.doc(it.id).update({deleted:false, deletedAt:null}),
+    purge:()=>itemsRef.doc(it.id).delete()
+  }));
+  deletedExpenses.forEach(ex=>rows.push({
+    type:'مصروف', label:`${ex.month||''} — ${ex.item||''} (${fmt(ex.amount||0)})`,
+    deletedAt:ex.deletedAt, restore:()=>expensesRef.doc(ex.id).update({deleted:false, deletedAt:null}),
+    purge:()=>expensesRef.doc(ex.id).delete()
+  }));
+
+  rows.sort((a,b)=>(b.deletedAt||0)-(a.deletedAt||0));
+
+  const list = $('trashList');
+  if(rows.length===0){
+    list.innerHTML = '<div class="ic-empty">سلة المحذوفات فاضية</div>';
+    return;
+  }
+  list.innerHTML = rows.map((r,i)=>`
+    <div class="alert-row">
+      <span><b>[${r.type}]</b> ${r.label} — باقي ${daysLeftInTrash(r.deletedAt)} يوم</span>
+      <span style="display:flex;gap:6px;">
+        <button class="wa-mini" style="background:#2E9E5B;" onclick="trashAction(${i},'restore')">↩️ استرجاع</button>
+        <button class="wa-mini" style="background:var(--rust);" onclick="trashAction(${i},'purge')">🗑️ نهائي</button>
+      </span>
+    </div>
+  `).join('');
+
+  window.__trashRows = rows;
+}
+async function trashAction(i, action){
+  const row = window.__trashRows[i];
+  if(!row) return;
+  if(action==='purge' && !confirm('حذف نهائي؟ ما راح تقدر ترجعه بعدها.')) return;
+  try{
+    await row[action]();
+    showToast(action==='restore' ? 'تم الاسترجاع' : 'تم الحذف النهائي');
+  }catch(e){ console.error(e); showToast('صار خطأ'); }
+}
+window.trashAction = trashAction;
+
+// تنظيف تلقائي: أي عنصر تجاوز 30 يوم بسلة المحذوفات ينحذف نهائيًا
+async function autoPurgeOldTrash(){
+  const purgeIfOld = async (arr, ref) => {
+    for(const x of arr){
+      if(Date.now() - (x.deletedAt||0) > TRASH_MS){
+        try{ await ref.doc(x.id).delete(); }catch(e){}
+      }
+    }
+  };
+  if(entriesRef) await purgeIfOld(deletedEntries, entriesRef);
+  if(unitsRef) await purgeIfOld(deletedUnits, unitsRef);
+  if(itemsRef) await purgeIfOld(deletedItems, itemsRef);
+  if(expensesRef) await purgeIfOld(deletedExpenses, expensesRef);
+}
+
+$('openTrashBtn').onclick = () => {
+  $('adminMenuOverlay').classList.remove('show');
+  renderTrash();
+  $('trashOverlay').classList.add('show');
+};
+$('trashCloseBtn').onclick = () => $('trashOverlay').classList.remove('show');
+$('trashOverlay').onclick = (e) => { if(e.target.id==='trashOverlay') $('trashOverlay').classList.remove('show'); };
+
+// ============================================================
+// ===== تصدير نسخة احتياطية (JSON) =====
+// ============================================================
+$('exportBackupBtn').onclick = () => {
+  const backup = {
+    exportedAt: new Date().toISOString(),
+    contractor_entries: entries,
+    delivery_units: units,
+    inventory_items: items,
+    inventory_counts: counts,
+    expenses: expenses
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `نسخة_احتياطية_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  $('adminMenuOverlay').classList.remove('show');
+  showToast('تم تحميل النسخة الاحتياطية');
+};
+
+// ============================================================
+// ===== اللوحة الرئيسية الموحدة =====
+// ============================================================
+function dashDetail(title, rows){
+  $('dashDetailTitle').textContent = title;
+  $('dashDetailList').innerHTML = rows.length
+    ? rows.map(r=>`<div class="alert-row"><span>${r}</span></div>`).join('')
+    : '<div class="ic-empty">ما فيه شي هنا</div>';
+  $('dashDetailOverlay').classList.add('show');
+}
+window.dashDetail = dashDetail;
+$('dashDetailCloseBtn').onclick = () => $('dashDetailOverlay').classList.remove('show');
+$('dashDetailOverlay').onclick = (e) => { if(e.target.id==='dashDetailOverlay') $('dashDetailOverlay').classList.remove('show'); };
+
+function renderDashboard(){
+  // ---- السلف ----
+  const remainAdvances = entries.reduce((s,e)=>s+((Number(e.total)||0)-(Number(e.paid)||0)),0);
+  const totalExpensesAll = expenses.reduce((s,e)=>s+(Number(e.amount)||0),0);
+
+  // ---- تسليم الدور ----
+  const activeUnitsD = units.filter(u=>!u.delivered);
+  const overdueActiveD = activeUnitsD.filter(u=>daysDiffFromToday(u.deliveryDate)<0);
+  const deliveredUnitsD = units.filter(u=>u.delivered);
+  const deliveredButWasOverdue = deliveredUnitsD.filter(u=>daysDiffFromToday(u.deliveryDate)<0);
+
+  // ---- المخزن ----
+  const underItems = items.map(it=>({it, last:latestCount(it.id)})).filter(x=>x.last && x.last.quantity < x.it.refQty);
+
+  // ---- المصاريف: أحدث شهر مسجل كمؤشر "الشهر الحالي" ----
+  const latestExpense = [...expenses].sort((a,b)=>b.createdAt-a.createdAt)[0];
+  const currentMonthLabel = latestExpense ? latestExpense.month : null;
+  const currentMonthTotal = currentMonthLabel ? expenses.filter(e=>e.month===currentMonthLabel).reduce((s,e)=>s+(Number(e.amount)||0),0) : 0;
+
+  $('dashGrid').innerHTML = `
+    <div class="dash-section-title">💰 سلف المقاولين</div>
+    <div class="dash-grid">
+      <div class="dash-card ${remainAdvances>0?'danger':'good'}"><div class="dn">${fmt(remainAdvances)}</div><div class="dl">متبقي بالسلف</div></div>
+      <div class="dash-card"><div class="dn">${fmt(totalExpensesAll)}</div><div class="dl">إجمالي المصاريف لحد الآن</div></div>
+    </div>
+
+    <div class="dash-section-title">🔑 تسليم الدور</div>
+    <div class="dash-grid">
+      <div class="dash-card danger clickable" onclick="dashDetail('دور متأخرة بالتسليم', ${JSON.stringify(overdueActiveD.map(u=>`${u.code} — متأخرة ${Math.abs(daysDiffFromToday(u.deliveryDate))} يوم`))})">
+        <div class="dn">${overdueActiveD.length}</div><div class="dl">دار متأخرة بالتسليم</div><div class="dhint">اضغط للتفصيل</div>
+      </div>
+      <div class="dash-card warn clickable" onclick="dashDetail('دور انجزت وموعدها كان عابر', ${JSON.stringify(deliveredButWasOverdue.map(u=>`${u.code} — استلمت ${u.deliveredDate?formatDateArabic(u.deliveredDate):''}`))})">
+        <div class="dn">${deliveredButWasOverdue.length}</div><div class="dl">أُنجزت ومتأخرة عن موعدها</div><div class="dhint">اضغط للتفصيل</div>
+      </div>
+    </div>
+
+    <div class="dash-section-title">📦 المخزن</div>
+    <div class="dash-grid">
+      <div class="dash-card danger clickable" onclick="dashDetail('مواد تحت الحد الأدنى', ${JSON.stringify(underItems.map(x=>`${x.it.name} — الموجود ${x.last.quantity} من أصل ${x.it.refQty}`))})">
+        <div class="dn">${underItems.length}</div><div class="dl">مادة تحت الحد الأدنى</div><div class="dhint">اضغط للتفصيل</div>
+      </div>
+      <div class="dash-card"><div class="dn">${items.length}</div><div class="dl">إجمالي المواد المسجلة</div></div>
+    </div>
+
+    <div class="dash-section-title">💵 المصاريف</div>
+    <div class="dash-grid">
+      <div class="dash-card"><div class="dn">${fmt(currentMonthTotal)}</div><div class="dl">${currentMonthLabel ? currentMonthLabel : 'ما فيه فقرات بعد'}</div></div>
+      <div class="dash-card"><div class="dn">${fmt(totalExpensesAll)}</div><div class="dl">الإجمالي الكلي (كل الأشهر)</div></div>
+    </div>
+  `;
+}
+
 initFormLists();
 watchConnection();
 applyViewMode();
@@ -3030,6 +3310,9 @@ if(initFirebase()){
   initInventoryFirestore();
   initExpensesFirestore();
   watchAdminPassword();
+  if(isAdminUnlocked()){
+    setTimeout(autoPurgeOldTrash, 4000); // تعطي وقت كافي لتحميل كل البيانات أول
+  }
 } else {
   render();
 }
