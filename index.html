@@ -589,7 +589,7 @@
 
   .fab{
     position:fixed;
-    left:18px; bottom:22px;
+    left:18px; bottom:44px;
     background:var(--amber);
     color:var(--navy);
     border:none;
@@ -600,6 +600,23 @@
     box-shadow:0 8px 20px rgba(217,142,4,.4);
     cursor:pointer;
     display:flex;align-items:center;justify-content:center;
+    z-index:30;
+  }
+
+  .app-footer{
+    position:fixed;
+    bottom:0; left:0; right:0;
+    background:var(--navy);
+    color:var(--amber-soft);
+    text-align:center;
+    font-family:'Cairo',sans-serif;
+    font-weight:800;
+    font-size:12.5px;
+    letter-spacing:.4px;
+    padding:7px 0;
+    z-index:40;
+    border-top:1px solid rgba(255,255,255,.12);
+    box-shadow:0 -2px 10px rgba(0,0,0,.15);
   }
 
   .overlay{
@@ -1221,6 +1238,8 @@
 </main>
 </div><!-- /dashboardPage -->
 
+
+<div class="app-footer">Design By Dr.Montather Ali</div>
 
 <div class="toast" id="toast"></div>
 
@@ -3266,67 +3285,104 @@ $('dashDetailCloseBtn').onclick = () => $('dashDetailOverlay').classList.remove(
 $('dashDetailOverlay').onclick = (e) => { if(e.target.id==='dashDetailOverlay') $('dashDetailOverlay').classList.remove('show'); };
 
 function renderDashboard(){
-  // ---- السلف ----
+  // ---- السلف حسب الشهر ----
   const remainAdvances = entries.reduce((s,e)=>s+((Number(e.total)||0)-(Number(e.paid)||0)),0);
-  const totalExpensesAll = expenses.reduce((s,e)=>s+(Number(e.amount)||0),0);
+  const advanceMonths = [...new Set(entries.map(e=>e.month).filter(Boolean))];
+  const remainByMonth = advanceMonths.map(m=>{
+    const remain = entries.filter(e=>e.month===m).reduce((s,e)=>s+((Number(e.total)||0)-(Number(e.paid)||0)),0);
+    return {m, remain};
+  }).sort((a,b)=>b.remain-a.remain);
 
-  // ---- تسليم الدور ----
+  // ---- المصاريف حسب الشهر ----
+  const totalExpensesAll = expenses.reduce((s,e)=>s+(Number(e.amount)||0),0);
+  const expenseMonths = [...new Set(expenses.map(e=>e.month).filter(Boolean))];
+  const expenseByMonth = expenseMonths.map(m=>{
+    const sum = expenses.filter(e=>e.month===m).reduce((s,e)=>s+(Number(e.amount)||0),0);
+    return {m, sum};
+  }).sort((a,b)=>b.sum-a.sum);
+  const latestExpense = [...expenses].sort((a,b)=>b.createdAt-a.createdAt)[0];
+  const currentMonthLabel = latestExpense ? latestExpense.month : null;
+
+  // ---- تسليم الدور: 3 فئات ----
   const activeUnitsD = units.filter(u=>!u.delivered);
-  const overdueActiveD = activeUnitsD.filter(u=>daysDiffFromToday(u.deliveryDate)<0);
-  const deliveredUnitsD = units.filter(u=>u.delivered);
-  const deliveredButWasOverdue = deliveredUnitsD.filter(u=>daysDiffFromToday(u.deliveryDate)<0);
+  const readyOverdue = activeUnitsD.filter(u=>u.status==='جاهز' && daysDiffFromToday(u.deliveryDate)<0);
+  const notReadyOverdue = activeUnitsD.filter(u=>u.status==='غير جاهز' && daysDiffFromToday(u.deliveryDate)<0);
+  const inProgressUnits = activeUnitsD.filter(u=>u.status==='قيد العمل');
 
   // ---- المخزن ----
   const underItems = items.map(it=>({it, last:latestCount(it.id)})).filter(x=>x.last && x.last.quantity < x.it.refQty);
 
-  // ---- المصاريف: أحدث شهر مسجل (بوضوح، بدون لبس) ----
-  const latestExpense = [...expenses].sort((a,b)=>b.createdAt-a.createdAt)[0];
-  const currentMonthLabel = latestExpense ? latestExpense.month : null;
-  const currentMonthTotal = currentMonthLabel ? expenses.filter(e=>e.month===currentMonthLabel).reduce((s,e)=>s+(Number(e.amount)||0),0) : 0;
-
-  // تخزين بيانات التفصيل بمتغير منفصل (يحل مشكلة تعارض الاقتباس بالأزرار)
+  // ==== تخزين بيانات التفصيل (يحل مشكلة تعارض الاقتباس، ويغذي كل الأزرار) ====
   dashDetailStore = {
-    overdueActive: {
-      title: '⏰ دور متأخرة عن موعد تسليمها',
-      rows: overdueActiveD.map(u=>`<b>${u.code}</b> — متأخرة ${Math.abs(daysDiffFromToday(u.deliveryDate))} يوم (${u.status})`)
+    remainByMonth: {
+      title: '💰 المتبقي حسب الشهر',
+      rows: remainByMonth.length ? remainByMonth.map(x=>`<b>${x.m}</b>: ${fmt(x.remain)}`) : []
     },
-    deliveredOverdue: {
-      title: '📦 دور أُنجزت بعد ما كانت متأخرة',
-      rows: deliveredButWasOverdue.map(u=>`<b>${u.code}</b> — استلمت بتاريخ ${u.deliveredDate?formatDateArabic(u.deliveredDate):'—'}`)
+    expenseByMonth: {
+      title: '💵 المصاريف حسب الشهر',
+      rows: expenseByMonth.length ? expenseByMonth.map(x=>`<b>${x.m}</b>: ${fmt(x.sum)}`) : []
+    },
+    expenseAllDetailed: {
+      title: '📋 تفصيل كل فقرات المصاريف',
+      rows: [...expenses].sort((a,b)=>b.createdAt-a.createdAt).map(e=>`<b>${e.month}</b> — ${e.item}: ${fmt(e.amount)} (${formatDateArabic(e.date)})`)
+    },
+    readyOverdue: {
+      title: '🟢 دور جاهزة وعبرت موعد تسليمها',
+      rows: readyOverdue.map(u=>`<b>${u.code}</b> — متأخرة ${Math.abs(daysDiffFromToday(u.deliveryDate))} يوم`)
+    },
+    notReadyOverdue: {
+      title: '🔴 دور غير جاهزة وعبرت موعد تسليمها',
+      rows: notReadyOverdue.map(u=>`<b>${u.code}</b> — متأخرة ${Math.abs(daysDiffFromToday(u.deliveryDate))} يوم`)
+    },
+    inProgressUnits: {
+      title: '🟠 دور قيد العمل حاليًا',
+      rows: inProgressUnits.map(u=>`<b>${u.code}</b> — ${u.contractor||'بدون مقاول'} ${u.sector?'('+u.sector+')':''}`)
     },
     underStock: {
       title: '📉 مواد تحت الحد الأدنى المطلوب',
       rows: underItems.map(x=>`<b>${x.it.name}</b> — الموجود ${x.last.quantity} من أصل ${x.it.refQty}`)
+    },
+    fullInventory: {
+      title: '📦 كشف كامل بالمواد المتوفرة',
+      rows: [...items].sort((a,b)=>a.name.localeCompare(b.name,'ar')).map(it=>{
+        const last = latestCount(it.id);
+        return `<b>${it.name}</b>: ${last ? last.quantity : '—'} (الحد: ${it.refQty})`;
+      })
     }
   };
-
-  const monthBlock = currentMonthLabel
-    ? `<div class="dl">مصروف <b>${currentMonthLabel}</b></div>`
-    : `<div class="dl" style="color:#9AA7B5;">ما فيه فقرات مصاريف مسجلة بعد</div>`;
 
   $('dashGrid').innerHTML = `
     <div class="dash-section-title">💰 سلف المقاولين</div>
     <div class="dash-grid">
-      <div class="dash-card ${remainAdvances>0?'danger':'good'}">
+      <div class="dash-card ${remainAdvances>0?'danger':'good'} clickable" onclick="dashDetail('remainByMonth')">
         <div class="dn">${fmt(remainAdvances)}</div>
         <div class="dl">إجمالي المتبقي للمقاولين</div>
+        <div class="dhint">👆 اضغط لعرضه حسب الشهر</div>
       </div>
-      <div class="dash-card">
+      <div class="dash-card clickable" onclick="dashDetail('expenseByMonth')">
         <div class="dn">${fmt(totalExpensesAll)}</div>
-        <div class="dl">إجمالي كل المصاريف (كل الأشهر)</div>
+        <div class="dl">إجمالي كل المصاريف</div>
+        <div class="dhint">👆 اضغط لعرضها حسب الشهر</div>
       </div>
     </div>
 
     <div class="dash-section-title">🔑 تسليم الدور</div>
     <div class="dash-grid">
-      <div class="dash-card danger clickable" onclick="dashDetail('overdueActive')">
-        <div class="dn">${overdueActiveD.length}</div>
-        <div class="dl">دار متأخرة، لسا ما انسلمت</div>
+      <div class="dash-card danger clickable" onclick="dashDetail('readyOverdue')">
+        <div class="dn">${readyOverdue.length}</div>
+        <div class="dl">جاهزة وعبرت موعد تسليمها</div>
         <div class="dhint">👆 اضغط لعرض الأسماء</div>
       </div>
-      <div class="dash-card warn clickable" onclick="dashDetail('deliveredOverdue')">
-        <div class="dn">${deliveredButWasOverdue.length}</div>
-        <div class="dl">انسلمت بس كانت متأخرة</div>
+      <div class="dash-card danger clickable" onclick="dashDetail('notReadyOverdue')">
+        <div class="dn">${notReadyOverdue.length}</div>
+        <div class="dl">غير جاهزة وعبرت موعد تسليمها</div>
+        <div class="dhint">👆 اضغط لعرض الأسماء</div>
+      </div>
+    </div>
+    <div class="dash-grid" style="margin-top:10px;">
+      <div class="dash-card warn clickable" onclick="dashDetail('inProgressUnits')" style="grid-column:1 / -1;">
+        <div class="dn">${inProgressUnits.length}</div>
+        <div class="dl">دور قيد العمل حاليًا</div>
         <div class="dhint">👆 اضغط لعرض الأسماء</div>
       </div>
     </div>
@@ -3338,21 +3394,24 @@ function renderDashboard(){
         <div class="dl">مادة تحت الحد الأدنى</div>
         <div class="dhint">👆 اضغط لعرض الأسماء</div>
       </div>
-      <div class="dash-card">
+      <div class="dash-card clickable" onclick="dashDetail('fullInventory')">
         <div class="dn">${items.length}</div>
         <div class="dl">إجمالي عدد المواد بالمخزن</div>
+        <div class="dhint">👆 اضغط لعرض كشف كامل</div>
       </div>
     </div>
 
     <div class="dash-section-title">💵 المصاريف</div>
     <div class="dash-grid">
-      <div class="dash-card">
-        <div class="dn">${fmt(currentMonthTotal)}</div>
-        ${monthBlock}
+      <div class="dash-card clickable" onclick="dashDetail('expenseByMonth')">
+        <div class="dn">${currentMonthLabel ? fmt(expenses.filter(e=>e.month===currentMonthLabel).reduce((s,e)=>s+(Number(e.amount)||0),0)) : '—'}</div>
+        <div class="dl">${currentMonthLabel ? 'مصروف <b>'+currentMonthLabel+'</b>' : 'ما فيه فقرات مسجلة بعد'}</div>
+        <div class="dhint">👆 اضغط لعرض كل شهر ومبلغه</div>
       </div>
-      <div class="dash-card">
+      <div class="dash-card clickable" onclick="dashDetail('expenseAllDetailed')">
         <div class="dn">${fmt(totalExpensesAll)}</div>
         <div class="dl">الإجمالي الكلي (كل الأشهر)</div>
+        <div class="dhint">👆 اضغط لعرض تفاصيل كل مبلغ</div>
       </div>
     </div>
   `;
