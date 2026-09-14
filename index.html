@@ -849,6 +849,8 @@
 </header>
 
 <main>
+  <div id="pendingWorkAlert"></div>
+
   <div class="filters">
     <button class="filter-chip" id="monthFilterBtn">كل الأشهر</button>
     <button class="filter-chip" id="contractorFilterBtn">كل المقاولين</button>
@@ -918,6 +920,12 @@
     <div class="field">
       <label>ملاحظات</label>
       <input type="text" id="f_notes" placeholder="أي ملاحظة إضافية (اختياري)">
+    </div>
+    <div class="field">
+      <label class="multi-select-row" style="border:none;padding:6px 0;">
+        <input type="checkbox" id="f_completed_check">
+        <span>تم إنجاز هذي الفقرة ✓</span>
+      </label>
     </div>
     <div class="sheet-actions">
       <button class="btn btn-secondary" id="cancelBtn">إلغاء</button>
@@ -1299,6 +1307,33 @@ const CREWS = [
   {name:"نايف", type:"صبغ"},
   {name:"خديدا قاسم فارس", type:"سقوف"}
 ];
+let customCrews = []; // كوادر تضاف يدويًا وتتحفظ بقاعدة البيانات تلقائيًا
+let customCrewsRef = null;
+
+function allCrews(){
+  const merged = [...CREWS];
+  customCrews.forEach(c=>{
+    if(!merged.some(m=>m.name===c.name && m.type===c.type)) merged.push(c);
+  });
+  return merged;
+}
+
+function initCustomCrewsFirestore(){
+  if(!db) return;
+  customCrewsRef = db.collection('custom_crews');
+  customCrewsRef.onSnapshot(snapshot=>{
+    customCrews = snapshot.docs.map(d=>d.data());
+    fillSelect($('f_crew'), allCrews(), c=>`${c.name}|${c.type}`, c=>`${c.name} - ${c.type}`, true);
+  }, err=>console.error(err));
+}
+
+async function saveCustomCrewIfNew(name, type){
+  if(!name || !type || !customCrewsRef) return;
+  if(allCrews().some(c=>c.name===name && c.type===type)) return; // موجود أصلًا
+  try{
+    await customCrewsRef.add({name, type});
+  }catch(e){ console.error(e); }
+}
 
 let entries = [];
 let deletedEntries = [];
@@ -1314,7 +1349,7 @@ function fillSelect(sel, options, valueFn, labelFn, includeOther){
 
 function initFormLists(){
   fillSelect($('f_contractor'), CONTRACTORS, c=>c, c=>c, true);
-  fillSelect($('f_crew'), CREWS, c=>`${c.name}|${c.type}`, c=>`${c.name} - ${c.type}`, true);
+  fillSelect($('f_crew'), allCrews(), c=>`${c.name}|${c.type}`, c=>`${c.name} - ${c.type}`, true);
   fillSelect($('u_contractor'), DELIVERY_CONTRACTORS, c=>c, c=>c, true);
 }
 
@@ -1412,6 +1447,7 @@ function openSheet(entry){
   $('f_total').value = entry ? entry.total : '';
   $('f_paid').value = entry ? entry.paid : '';
   $('f_notes').value = entry ? (entry.notes||'') : '';
+  $('f_completed_check').checked = entry ? !!entry.completed : false;
 
   // المقاول
   const contractorVal = entry ? entry.contractor : '';
@@ -1428,7 +1464,7 @@ function openSheet(entry){
   // الكادر
   const crewName = entry ? (entry.crewName||'') : '';
   const crewType = entry ? (entry.crewType||'') : '';
-  const match = CREWS.find(c=>c.name===crewName && c.type===crewType);
+  const match = allCrews().find(c=>c.name===crewName && c.type===crewType);
   if(entry && !match){
     $('f_crew').value = '__other__';
     $('f_crew_other_name').style.display = 'block';
@@ -1462,6 +1498,7 @@ $('saveBtn').onclick = async () => {
   const total = Number($('f_total').value)||0;
   const paid = Number($('f_paid').value)||0;
   const notes = $('f_notes').value.trim();
+  const completed = $('f_completed_check').checked;
 
   let contractor = $('f_contractor').value;
   if(contractor === '__other__') contractor = $('f_contractor_other').value.trim();
@@ -1470,6 +1507,7 @@ $('saveBtn').onclick = async () => {
   if($('f_crew').value === '__other__'){
     crewName = $('f_crew_other_name').value.trim();
     crewType = $('f_crew_other_type').value.trim();
+    saveCustomCrewIfNew(crewName, crewType);
   } else {
     [crewName, crewType] = $('f_crew').value.split('|');
   }
@@ -1481,9 +1519,9 @@ $('saveBtn').onclick = async () => {
 
   try{
     if(editingId){
-      await updateEntry(editingId, {month, contractor, code, crewName, crewType, item, total, paid, notes});
+      await updateEntry(editingId, {month, contractor, code, crewName, crewType, item, total, paid, notes, completed});
     } else {
-      await addEntry({month, contractor, code, crewName, crewType, item, total, paid, notes, createdAt: Date.now()});
+      await addEntry({month, contractor, code, crewName, crewType, item, total, paid, notes, completed, createdAt: Date.now()});
     }
     closeSheet();
     showToast(navigator.onLine ? 'تم الحفظ' : 'تم الحفظ محليًا — راح يزامن أول ما يرجع النت');
@@ -1687,6 +1725,26 @@ function render(){
   populateFilters();
   const filtered = getFilteredEntries();
 
+  // بانر الفقرات اللي لسا ما انجزت (حسب الفلاتر الحالية)
+  const pendingWork = filtered.filter(e=>!e.completed);
+  if(pendingWork.length>0){
+    $('pendingWorkAlert').innerHTML = `
+      <div class="alert-banner">
+        <div class="alert-banner-title" style="color:#B25E00;">🟠 فقرات لسا ما انجزت (${pendingWork.length})</div>
+        ${pendingWork.map(e=>`
+          <div class="alert-row">
+            <label style="display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;">
+              <input type="checkbox" onchange="toggleCompleted('${e.id}', this.checked)">
+              <span>${e.contractor} — ${e.item} (${fmt(e.total)})</span>
+            </label>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  } else {
+    $('pendingWorkAlert').innerHTML = '';
+  }
+
   // إجماليات عامة
   const totalAll = filtered.reduce((s,e)=>s+e.total,0);
   const paidAll = filtered.reduce((s,e)=>s+e.paid,0);
@@ -1750,7 +1808,11 @@ function render(){
       <div class="entry">
         <div class="entry-left">
           <div>
-            <span class="work-item" style="display:inline;font-weight:600;">${e.item}</span>
+            <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;">
+              <input type="checkbox" ${e.completed?'checked':''} onchange="toggleCompleted('${e.id}', this.checked)">
+              <span class="work-item" style="display:inline;font-weight:600;${e.completed?'text-decoration:line-through;color:var(--muted);':''}">${e.item}</span>
+            </label>
+            ${e.completed ? `<span class="delivered-badge" style="margin-right:6px;">✓ منجز</span>` : ''}
             ${(viewMode!=='unit' && e.code) ? `<span class="code-tag">${e.code}</span>`:''}
           </div>
           <div class="entry-tags">${e.month} · ${viewMode==='crew' ? e.contractor : (viewMode==='unit' ? `${e.contractor} · ${crewLabel(e)}` : crewLabel(e))}</div>
@@ -1789,6 +1851,16 @@ function editEntry(id){
   const e = entries.find(x=>x.id===id);
   if(e) openSheet(e);
 }
+async function toggleCompleted(id, checked){
+  try{
+    await updateEntry(id, {completed: checked});
+    showToast(checked ? 'تم تعليم الفقرة كمنجزة ✓' : 'رجعت الفقرة لغير منجزة');
+  }catch(e){
+    console.error(e);
+    showToast('صار خطأ بالتحديث');
+  }
+}
+window.toggleCompleted = toggleCompleted;
 window.editEntry = editEntry;
 window.deleteEntry = deleteEntry;
 window.toggleCard = toggleCard;
@@ -3425,6 +3497,7 @@ if(initFirebase()){
   initDeliveryFirestore();
   initInventoryFirestore();
   initExpensesFirestore();
+  initCustomCrewsFirestore();
   watchAdminPassword();
   if(isAdminUnlocked()){
     setTimeout(autoPurgeOldTrash, 4000); // تعطي وقت كافي لتحميل كل البيانات أول
