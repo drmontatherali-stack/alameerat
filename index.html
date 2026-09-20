@@ -1170,6 +1170,7 @@
 
 <main>
   <div id="inventoryAlerts"></div>
+  <button class="btn btn-primary" id="showMovesBtn" style="width:100%;margin-bottom:12px;">📋 إظهار الحركات</button>
   <div id="inventoryList"></div>
 </main>
 
@@ -1214,6 +1215,18 @@
     <div class="sheet-actions">
       <button class="btn btn-secondary" id="txCancelBtn">إلغاء</button>
       <button class="btn btn-primary" id="txSaveBtn">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="movesOverlay">
+  <div class="sheet">
+    <h2>حركات الفنيين</h2>
+    <div id="movesTechRow" style="display:flex;gap:8px;margin-bottom:12px;"></div>
+    <div id="movesSummary" style="font-size:12px;color:var(--muted);margin-bottom:6px;"></div>
+    <div id="movesList" style="max-height:50vh;overflow-y:auto;"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-primary" id="movesCloseBtn">إغلاق</button>
     </div>
   </div>
 </div>
@@ -2972,7 +2985,7 @@ async function setCurrentStock(itemId, newValue){
     });
     showToast('تم الحفظ');
     return true;
-  }catch(e){ console.error(e); showToast('صار خطأ بالحفظ'); renderInventory(); return false; }
+  }catch(e){ console.error('setCurrentStock failed:', e); showToast('صار خطأ بالحفظ: ' + (e && (e.code || e.message) || 'غير معروف')); renderInventory(); return false; }
 }
 async function saveStockInline(el){
   const raw = normalizeNumberInput(el.value);
@@ -3042,8 +3055,44 @@ $('historyCloseBtn').onclick = () => $('historyOverlay').classList.remove('show'
 $('historyOverlay').onclick = (e) => { if(e.target.id==='historyOverlay') $('historyOverlay').classList.remove('show'); };
 window.openHistory = openHistory;
 
+// ---- إظهار حركات كل فني ----
+const MOVES_TECHS = ['علي','محمد','اكرم'];
+let movesTech = null;
+
+function itemNameById(id){
+  const it = items.find(x=>x.id===id) || deletedItems.find(x=>x.id===id);
+  return it ? it.name : '(مادة محذوفة)';
+}
+function renderMovesList(){
+  $('movesTechRow').innerHTML = MOVES_TECHS.map(n=>`
+    <button class="btn ${movesTech===n?'btn-primary':'btn-secondary'}" style="flex:1;padding:10px 4px;" onclick="selectMovesTech('${n}')">${n}</button>
+  `).join('');
+  if(!movesTech){
+    $('movesSummary').textContent = '';
+    $('movesList').innerHTML = '<div style="padding:16px;color:var(--muted);text-align:center;">اختر اسم الفني حتى تظهر حركاته</div>';
+    return;
+  }
+  const list = transactions.filter(t=>t.technician===movesTech)
+    .sort((a,b)=> new Date(b.date) - new Date(a.date) || (b.createdAt-a.createdAt));
+  const out = list.filter(t=>t.delta<0).reduce((s,t)=>s+Math.abs(t.delta),0);
+  const inn = list.filter(t=>t.delta>0).reduce((s,t)=>s+t.delta,0);
+  $('movesSummary').textContent = list.length ? `${list.length} حركة — إجمالي السحب ${out} · إجمالي الإضافة ${inn}` : '';
+  $('movesList').innerHTML = list.length ? list.map(t=>`
+    <div class="history-row">
+      <span>${formatDateArabic(t.date)} — ${itemNameById(t.itemId)}</span>
+      <span class="hq" style="color:${t.delta>0?'#1E7A45':'var(--rust)'};">${t.delta>0?'+':''}${t.delta}</span>
+    </div>
+  `).join('') : '<div style="padding:16px;color:var(--muted);text-align:center;">ما فيه حركات مسجلة لهذا الفني</div>';
+}
+function selectMovesTech(name){ movesTech = name; renderMovesList(); }
+window.selectMovesTech = selectMovesTech;
+$('showMovesBtn').onclick = () => { movesTech = null; renderMovesList(); $('movesOverlay').classList.add('show'); };
+$('movesCloseBtn').onclick = () => $('movesOverlay').classList.remove('show');
+$('movesOverlay').onclick = (e) => { if(e.target.id==='movesOverlay') $('movesOverlay').classList.remove('show'); };
+
 // ---- العرض الرئيسي: جدول واحد واضح ----
 function renderInventory(){
+  if($('movesOverlay') && $('movesOverlay').classList.contains('show')) renderMovesList();
   const withStock = items.map(it=>({it, stock: currentStock(it.id)}));
   const underCount = withStock.filter(x=> x.stock < x.it.refQty).length;
   const overCount = withStock.filter(x=> x.stock > x.it.refQty).length;
