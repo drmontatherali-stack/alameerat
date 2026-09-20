@@ -2949,6 +2949,46 @@ async function adjustRefQty(id, delta){
 }
 window.adjustRefQty = adjustRefQty;
 
+// ---- تعديل الكمية الحالية مباشرة من القائمة ----
+// الكمية الحالية = مجموع الحركات، فأي تعديل يتحفظ كحركة "تعديل مباشر" بالفرق
+// حتى يبقى دفتر الحركات سليم ويتزامن مع كل الأجهزة.
+function normalizeNumberInput(str){
+  return String(str==null?'':str)
+    .replace(/[٠-٩]/g, d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+    .replace(/[۰-۹]/g, d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
+    .replace(/[٫]/g,'.').replace(/[−–]/g,'-').trim();
+}
+async function setCurrentStock(itemId, newValue){
+  if(!transactionsRef){ showToast('ما تم الاتصال بقاعدة البيانات بعد'); return false; }
+  const target = Number(newValue);
+  if(!isFinite(target)){ showToast('اكتب رقم صحيح'); renderInventory(); return false; }
+  const diff = target - currentStock(itemId);
+  if(diff === 0) return true;
+  try{
+    await transactionsRef.add({
+      itemId, delta: diff, technician: 'تعديل مباشر',
+      date: new Date().toISOString().slice(0,10),
+      createdAt: Date.now()
+    });
+    showToast('تم الحفظ');
+    return true;
+  }catch(e){ console.error(e); showToast('صار خطأ بالحفظ'); renderInventory(); return false; }
+}
+async function saveStockInline(el){
+  const raw = normalizeNumberInput(el.value);
+  if(raw === '' || isNaN(Number(raw))){
+    showToast('اكتب رقم صحيح');
+    renderInventory();
+    return;
+  }
+  await setCurrentStock(el.dataset.id, Number(raw));
+}
+async function adjustStock(id, delta){
+  await setCurrentStock(id, currentStock(id) + delta);
+}
+window.saveStockInline = saveStockInline;
+window.adjustStock = adjustStock;
+
 // ---- تسجيل عملية سحب/إضافة ----
 function openTxSheet(itemId){
   txItemId = itemId;
@@ -3060,7 +3100,13 @@ function renderInventory(){
             <button class="btn-mini edit" style="padding:4px 8px;" onclick="adjustRefQty('${it.id}',1)">➕</button>
           </div>
         </td>
-        <td style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:15px;">${stock}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:3px;justify-content:center;">
+            <button class="btn-mini edit" style="padding:4px 8px;" onclick="adjustStock('${it.id}',-1)">➖</button>
+            <input type="text" inputmode="numeric" value="${stock}" data-id="${it.id}" onchange="saveStockInline(this)" onfocus="this.select()" style="width:52px;text-align:center;padding:6px 4px;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:15px;">
+            <button class="btn-mini edit" style="padding:4px 8px;" onclick="adjustStock('${it.id}',1)">➕</button>
+          </div>
+        </td>
         <td><span class="item-status ${statusClass}">${statusText}</span></td>
         <td>
           <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
